@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+#container {
+	margin: 0px auto;
+	width: 800px;
+	height: 800px;
+	border: 10px #333 solid;
+	position: relative;
+}
+#controls {
+	margin: 0px auto;
+	width: 600px;
+	height: 150px;
+	position: relative;
+	background-color: #CCC;
+	border: 5px #CCC solid;
+}
+#mainVideo {
+	width: 800px;
+	height: 800px;
+	background-color: #444;
+	position: absolute;
+	visibility: hidden;
+}
+#secondaryVideo {
+	width: 200px;
+	height: 200px;
+	background-color: #666;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	visibility: hidden;
+}
+#canvas {
+	width: 800px;
+	height: 800px;
+	background-color: black;
+	position: absolute;
+}
+#playbackVideo {
+	width: 500px;
+	height: 375px;
+	background-color: #444;
+	position: absolute;
+	visibility: hidden;
+}
+#camera {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+#cameraVideo {
+	width: 150px;
+	height: 150px;
+	background-color: #444;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+}
+#configs {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 150px;
+	top: 0;
+}
+#buttonConf1 {
+	width: 60px;
+	height: 50px;
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 20px;
+}
+#buttonConf2 {
+	width: 60px;
+	height: 50px;
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 20px;
+}
+#buttonConf3 {
+	width: 60px;
+	height: 50px;
+	position: absolute;
+	left: 10px;
+	bottom: 30px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 20px;
+}
+#buttonConf4 {
+	width: 60px;
+	height: 50px;
+	position: absolute;
+	right: 10px;
+	bottom: 30px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 20px;
+}
+#confinstruction {
+	width: 150px;
+	height: 20px;
+	position: absolute;
+	left: 0px;
+	bottom: 5px;
+	font-size: 15px;
+	text-align: center;
+}
+#rec {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 300px;
+	top: 0;
+}
+#light {
+	width: 15px;
+	height: 15px;
+	position: absolute;
+	left: 65px;
+	top: 5px;
+	border-radius: 15px;
+	background-color: #000;
+}
+#buttonRecord {
+	width: 80px;
+	height: 40px;
+	position: absolute;
+	left: 10px;
+	bottom: 85px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 15px;
+}
+#buttonPause {
+	width: 40px;
+	height: 40px;
+	position: absolute;
+	right: 10px;
+	bottom: 85px;
+	border-radius: 5px;
+	background-color: #DDD;
+}
+#buttonPlayback {
+	width: 130px;
+	height: 40px;
+	position: absolute;
+	left: 10px;
+	bottom: 35px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 15px;
+}
+#buttonDownload {
+	width: 130px;
+	height: 15px;
+	position: absolute;
+	left: 10px;
+	bottom: 10px;
+	border-radius: 5px;
+	background-color: #AFF;
+	font-family: sans-serif;
+	font-size: 15px;
+	text-align: center;
+}
+#comp {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 450px;
+	top: 0;
+}
+#buttonChooseComponent {
+	width: 130px;
+	height: 130px;
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 15px;
+}
+#buttonStopComponent {
+	width: 60px;
+	height: 60px;
+	position: absolute;
+	left: 45px;
+	bottom: 45px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 15px;
+	visibility: hidden;
+}
+#componentVideo {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%,-50%);
+  	background-color: #444;
+	visibility: hidden;
+}
+#license {
+	width: 100px;
+	height: 10px;
+	position: absolute;
+	left: 605px;
+	top: -5px;
+	font-size: 8px;
+	text-align: center;
+}
+
+
+</style>
+
+<div id="container">
+	<video id="mainVideo" autoplay="true"></video>
+    <video id="secondaryVideo" autoplay="true"></video>
+    <canvas id="canvas"></canvas>
+    <video id="playbackVideo" controls></video>
+</div>
+
+<div id="controls">
+	<div id = "camera">
+		<video id="cameraVideo" autoplay="true"></video>
+	</div>
+	<div id="configs">
+	  	<input id="buttonConf1" type="button" value="1" />
+		<input id="buttonConf2" type="button" value="2" />
+		<input id="buttonConf3" type="button" value="3" />
+		<input id="buttonConf4" type="button" value="4" />
+		<div id="confinstruction">
+			select configuration
+		</div>
+	</div>
+	<div id="rec">
+	    <div id="light"></div>
+		<input id="buttonRecord" type="button" value="rec" />
+		<input id="buttonPause" type="button" value="||" />
+		<input id="buttonPlayback" type="button" value="playback" />
+		<a id="buttonDownload"> download </a>
+	</div>
+	<div id="comp">
+		<input id="buttonChooseComponent" type="button" value="select&#x00A; shared window" />
+	    <video id="componentVideo" autoplay="true"></video>
+		<input id="buttonStopComponent" type="button" value="stop" />
+	</div>
+	<div id="license">
+		<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br /><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons</a>
+	</div>
+</div>
+
+
+</html>
+
+<script>
+
+var mainVideo = document.getElementById("mainVideo");
+var secondaryVideo = document.getElementById("secondaryVideo");
+var playbackVideo = document.getElementById("playbackVideo");
+var canvas = document.getElementById("canvas");
+var cameraVideo = document.getElementById("cameraVideo");
+var componentVideo = document.getElementById("componentVideo");
+var controls = document.getElementById("controls");
+var buttonConf1 = document.getElementById('buttonConf1');
+var buttonConf2 = document.getElementById('buttonConf2');
+var buttonConf3 = document.getElementById('buttonConf3');
+var buttonConf4 = document.getElementById('buttonConf4');
+var buttonRecord = document.getElementById('buttonRecord');
+var buttonPause = document.getElementById('buttonPause');
+var buttonPlayback = document.getElementById('buttonPlayback');
+var buttonDownload = document.getElementById('buttonDownload');
+var buttonChooseComponent = document.getElementById('buttonChooseComponent');
+var buttonStopComponent = document.getElementById('buttonStopComponent');
+var comp = document.getElementById('comp');
+
+var controlsVideoMaxWidth = 150;
+var controlsVideoMaxHeight = 150;
+var totalBorder = 60;
+var pixels = 1000000;
+
+var mainRatio=1;
+var playbackRatio = 1;
+var secondaryRatio=1;
+var secondaryWidthFactor=1/4;
+var secondaryHeightFactor=1/4;
+var factor = 1/4;
+var factorList = [1/4,1/4,1/2,1/4,1/4]
+
+var selectedState = 1;
+var currentState = 0;
+
+var recording = 0;
+var paused = 0;
+var playingback = 0;
+var fadingDown = 0;
+var fadingUp = 0;
+var changeMain = 1;
+
+var mediaRecorder;
+
+function tocss(x) {
+	return x.toString() + "px";
+}
+
+function resize(whratio, wmax, hmax) {
+	if (whratio < wmax/hmax) {
+		var hnew = hmax;
+		var wnew = hmax*whratio;
+	} else {
+		var hnew = wmax/whratio;
+		var wnew = wmax;
+	}
+	return [wnew, hnew];
+}
+
+function resizecss(w, h, wmax, hmax) {
+	const [wnew, hnew] = resize(w, h, wmax, hmax);
+	return [tocss(wnew), tocss(hnew)];
+}
+
+function sizeAll() {
+	var w,h;
+	factor = factorList[currentState];
+	if (!playingback) [w,h] = resize(mainRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+	else [w,h] = resize(playbackRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+	[container.style.width, container.style.height] = [tocss(w), tocss(h)];
+	[mainVideo.style.width, mainVideo.style.height] = [container.style.width, container.style.height];
+	[playbackVideo.style.width, playbackVideo.style.height] = [container.style.width, container.style.height];
+	[canvas.style.width, canvas.style.height] = [container.style.width, container.style.height];
+	const [sw,sh] = resize(secondaryRatio,w*factor,h*factor);
+	[secondaryVideo.style.width, secondaryVideo.style.height] = [tocss(sw), tocss(sh)];
+	[secondaryWidthFactor, secondaryHeightFactor] = [sw/w, sh/h];
+}
+
+function setMain(v) {
+	if (!changeMain) return;
+	mainVideo.srcObject = v.srcObject;
+    if (v.srcObject) mainRatio = v.videoWidth/v.videoHeight;
+    else mainRatio = 1;
+}
+
+function setSecondary(v) {
+	if (v && v.srcObject) {
+		secondaryVideo.srcObject = v.srcObject;
+    	secondaryRatio = v.videoWidth/v.videoHeight;
+	} else {
+		secondaryVideo.srcObject = null;
+    	secondaryRatio = 1;
+	}
+}
+
+function setButtons() {
+	buttonConf1.style.backgroundColor = "#DDD";
+	buttonConf2.style.backgroundColor = "#DDD";
+	buttonConf3.style.backgroundColor = "#DDD";
+	buttonConf4.style.backgroundColor = "#DDD";
+	if (selectedState == 1) buttonConf1.style.backgroundColor = "#BBF";
+	if (selectedState == 2) buttonConf2.style.backgroundColor = "#BBF";
+	if (selectedState == 3) buttonConf3.style.backgroundColor = "#BBF";
+	if (selectedState == 4) buttonConf4.style.backgroundColor = "#BBF";
+}
+
+function changeState() {
+	if (selectedState == 1) {
+		setMain(cameraVideo);
+		setSecondary(null);
+		currentState = 1;
+	} else if (selectedState == 2) {
+		setMain(cameraVideo);
+		setSecondary(componentVideo);
+		if (componentVideo.srcObject) currentState = 2;
+		else currentState = 1;
+	} else if (selectedState == 3) {
+    	if (componentVideo.srcObject) {
+    		setMain(componentVideo);
+    		setSecondary(cameraVideo);
+			currentState = 3;
+    	} else {
+			setMain(cameraVideo);
+			setSecondary(null);
+			currentState = 1;
+    	}
+	} else if (selectedState == 4) {
+    	if (componentVideo.srcObject) {
+    		setMain(componentVideo);
+			currentState = 4;
+    	} else {
+    		setMain(cameraVideo);
+			currentState = 1;
+    	}
+    	setSecondary(null);
+	}
+	sizeAll();
+}
+
+function setState(state) {
+	if (fadingDown || fadingUp || playingback) return;
+	if (!cameraVideo.srcObject) selectedState = 4;
+	if (state && cameraVideo.srcObject) selectedState = state;
+	if (!componentVideo.srcObject) virtualState = 1;
+	else virtualState = selectedState;
+	setButtons();
+	if (currentState==1 && virtualState==2) changeMain=0;
+	else if (currentState==2 && virtualState==1) changeMain=0;
+	else if (currentState==3 && virtualState==4) changeMain=0;
+	else if (currentState==4 && virtualState==3) changeMain=0;
+	else changeMain = 1;
+	if (currentState != virtualState) fadingDown = 1;
+}
+
+var lightInterval;
+function startRecord() {
+	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
+	var recordedChunks = [];
+	var options = { mimeType: "video/webm" };
+	mediaRecorder = new MediaRecorder(canvasStream,options);
+	mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+	mediaRecorder.onstop = event => {
+		canvasStream.getTracks().forEach(track => track.stop());
+		let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
+	    playbackVideo.src = URL.createObjectURL(recordedBlob);
+    	buttonDownload.href = playbackVideo.src;
+	    buttonDownload.download = "RecordedVideo.webm";
+		playbackRatio = mainRatio;
+	};
+	paused = 0;
+	mediaRecorder.start();
+	var lightIntensity=5;
+	var lightChange = 1;
+	lightInterval = window.setInterval(function() {
+		lightIntensity+=lightChange;
+		if (lightIntensity >= 15) lightChange = -1;
+		if (lightIntensity <= 5) lightChange = 1;
+		light.style.backgroundColor = "#" + lightIntensity.toString(16) + "00";
+	},50);
+}
+
+function stopRecord() {
+	mediaRecorder.requestData();
+	mediaRecorder.stop();
+	clearInterval(lightInterval);
+	light.style.backgroundColor = "#000";
+}
+
+// done at the start
+document.addEventListener("DOMContentLoaded", function(event) {
+	if (navigator.mediaDevices.getUserMedia) {
+ 	 	navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+    	.then(function (stream) {
+    	  	cameraVideo.srcObject = stream;
+    	  	cameraVideo.onloadedmetadata = (ev) => {
+    	  		[cameraVideo.style.width, cameraVideo.style.height] = resizecss(cameraVideo.videoWidth/cameraVideo.videoHeight,controlsVideoMaxWidth,controlsVideoMaxHeight);
+				setState(1);
+    	  	};
+    	})
+    	.catch(function (error) {
+    		cameraVideo.srcObject = null;
+    	  	setState();
+    	});
+	} else {
+		cameraVideo.srcObject = null;
+    	setState();
+    }
+    cameraVideo.muted = true;
+    componentVideo.muted = true;
+    mainVideo.muted = true;
+    secondaryVideo.muted = true;
+	recording = 0;
+	playingback = 0;
+	fadingDown = 0;
+	fadingUp = 0;
+	context = canvas.getContext('2d');
+	var alpha=1;
+	recordInterval = window.setInterval(function() {
+		// h * h * ratio = pixels
+		var h = Math.sqrt(pixels / mainRatio);
+		var w = h * mainRatio;
+		canvas.width = w;
+		canvas.height = h;
+		if ((fadingDown || fadingUp) && changeMain) {
+			context.globalAlpha = alpha;
+		}
+		if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
+		if ((fadingDown || fadingUp) && !changeMain) {
+			context.globalAlpha = alpha;
+		}
+		if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
+		if (fadingDown) {
+/*
+			context.globalAlpha = alpha;
+			context.fillStyle = "black";
+			context.fillRect(0, 0, w, h);
+			*/
+			alpha = alpha - 0.1;
+			if (alpha<=0) {
+				fadingDown = 0;
+				alpha = 0;
+				changeState();
+				fadingUp = 1;
+			}
+		}
+		if (fadingUp) {
+/*
+			context.globalAlpha = alpha;
+			context.fillStyle = "black";
+			context.fillRect(0, 0, w, h);
+			*/
+			alpha = alpha + 0.1;
+			if (alpha>=1) {
+				alpha = 1;
+				fadingUp = 0;
+			}
+		}
+	}, 40);
+});
+
+document.addEventListener('keydown', (event) => {
+	const keyName = event.key;
+	if (keyName == "1") document.getElementById('buttonConf1').click();
+	if (keyName == "2") document.getElementById('buttonConf2').click();
+	if (keyName == "3") document.getElementById('buttonConf3').click();
+	if (keyName == "4") document.getElementById('buttonConf4').click();
+});
+
+window.addEventListener("resize",sizeAll);
+
+document.getElementById('buttonConf1').addEventListener('click', () => setState(1));
+
+document.getElementById('buttonConf2').addEventListener('click', () => setState(2));
+
+document.getElementById('buttonConf3').addEventListener('click', () => setState(3));
+
+document.getElementById('buttonConf4').addEventListener('click', () => setState(4));
+
+buttonRecord.addEventListener('click', function() {
+	if (!mainVideo.srcObject) return;
+	if (fadingDown || fadingUp || playingback) return;
+	if (recording) {
+		stopRecord();
+		buttonRecord.value = "record";
+		recording = 0;
+	} else {
+		startRecord();
+		buttonRecord.value = "stop";
+		recording = 1;
+	}
+});
+
+buttonPlayback.addEventListener('click', function() {
+	if (fadingDown || fadingUp || recording) return;
+	if (playingback) {
+		playbackVideo.style.visibility = "hidden";
+		buttonPlayback.style.backgroundColor = "#DDD";
+		playingback = 0;
+		sizeAll();
+	} else {
+		playbackVideo.style.visibility = "visible";
+		buttonPlayback.style.backgroundColor = "#BBF";
+		playingback = 1;
+		sizeAll();
+	}
+});
+
+buttonPause.addEventListener('click', function() {
+	if (recording) {
+		if (!paused) {
+			mediaRecorder.pause();
+			paused=1;
+			buttonPause.style.backgroundColor = "#BBF";
+		}
+		else {
+			mediaRecorder.resume();
+			paused=0;
+			buttonPause.style.backgroundColor = "#DDD";
+		}
+	}	
+});
+
+buttonChooseComponent.addEventListener('click', function() {
+	if (fadingDown || fadingUp || playingback) return;
+	if (navigator.mediaDevices.getDisplayMedia) {
+ 	 	navigator.mediaDevices.getDisplayMedia({ video: true })
+    	.then(function (stream) {
+    	  	componentVideo.srcObject = stream;
+    	  	componentVideo.onloadedmetadata = (ev) => {
+    	  		[componentVideo.style.width, componentVideo.style.height] = resizecss(componentVideo.videoWidth/componentVideo.videoHeight,controlsVideoMaxWidth,controlsVideoMaxHeight);
+    	  		setState();
+    	  		buttonChooseComponent.style.visibility="hidden";
+    	  		componentVideo.style.visibility="visible";
+    	  	};
+    	})
+    	.catch(function (error) {
+    	});
+	}
+});
+
+comp.addEventListener('mouseover', function() {
+	if (playingback) return;
+	if (componentVideo.srcObject) buttonStopComponent.style.visibility = "visible";
+});
+
+comp.addEventListener('mouseout', function() {
+	if (playingback) return;
+	buttonStopComponent.style.visibility = "hidden";
+});
+
+buttonStopComponent.addEventListener('click', stopCapture);
+function stopCapture(evt) {
+	if (fadingDown || fadingUp || playingback) return;
+	componentVideo.style.visibility = "hidden";
+    buttonChooseComponent.style.visibility="visible";
+	buttonStopComponent.style.visibility = "hidden";
+	let tracks = componentVideo.srcObject.getTracks();
+	tracks.forEach(track => track.stop());
+	componentVideo.srcObject = null;
+	componentVideo.style.width = tocss(controlsVideoMaxWidth);
+	componentVideo.style.height = tocss(controlsVideoMaxHeight);
+	setState();
+}
+
+</script>
