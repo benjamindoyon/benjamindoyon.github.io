@@ -474,7 +474,7 @@ function startRecord() {
 		playbackRatio = mainRatio;
 	};
 	paused = 0;
-	mediaRecorder.start();
+	window.setTimeout(mediaRecorder.start,100);
 	var lightIntensity=5;
 	var lightChange = 1;
 	lightInterval = window.setInterval(function() {
