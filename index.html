@@ -453,7 +453,6 @@ function setState(state) {
 }
 
 function setRecorder() {
-	alert('a');
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
