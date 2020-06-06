@@ -459,7 +459,6 @@ function setState(state) {
 var lightInterval;
 function setRecorder() {
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
-	alert('a');
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -503,19 +502,25 @@ function stopRecorder() {
 }
 
 function stopRecord() {
-	if (checkboxOutro.checked) {
-		outroVideo.play();
-		playingOutro = 1;
-		introVideo.addEventListener('ended',function() {
+	return new Promise((res,rej)=> {
+		if (checkboxOutro.checked) {
+			outroVideo.play();
+			playingOutro = 1;
+			ontroVideo.addEventListener('ended',function() {
+				stopRecorder();
+				playingOutro=0;
+				res();
+			});
+		} else {
 			stopRecorder();
-			playingOutro=0;
-		});
-	} else stopRecorder();
-	if (playingIntro) {
-		playingIntro = 0;
-		introVideo.pause();
-		introVideo.currentTime=0;
-	}
+			res();
+		}
+		if (playingIntro) {
+			playingIntro = 0;
+			introVideo.pause();
+			introVideo.currentTime=0;
+		}
+	});
 }
 
 function pauseRecord() {
@@ -618,9 +623,10 @@ buttonRecord.addEventListener('click', function() {
 	if (!mainVideo.srcObject) return;
 	if (fadingDown || fadingUp || playingback) return;
 	if (recording) {
-		stopRecord();
-		buttonRecord.value = "record";
-		recording = 0;
+		stopRecord().then(()=>{
+			buttonRecord.value = "rec";
+			recording = 0;
+		});
 	} else {
 		startRecord();
 		buttonRecord.value = "stop";
