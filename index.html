@@ -11,7 +11,7 @@
 }
 #controls {
 	margin: 0px auto;
-	width: 600px;
+	width: 800px;
 	height: 150px;
 	position: relative;
 	background-color: #CCC;
@@ -20,14 +20,12 @@
 #mainVideo {
 	width: 800px;
 	height: 800px;
-	background-color: #444;
 	position: absolute;
 	visibility: hidden;
 }
 #secondaryVideo {
 	width: 200px;
 	height: 200px;
-	background-color: #666;
 	position: absolute;
 	bottom: 0;
 	right: 0;
@@ -42,7 +40,6 @@
 #playbackVideo {
 	width: 500px;
 	height: 375px;
-	background-color: #444;
 	position: absolute;
 	visibility: hidden;
 }
@@ -116,6 +113,7 @@
 	left: 0px;
 	bottom: 5px;
 	font-size: 15px;
+	font-family: sans-serif;
 	text-align: center;
 }
 #rec {
@@ -213,7 +211,18 @@
   	background-color: #444;
 	visibility: hidden;
 }
-
+#intro {
+	width: 150px;
+	height: 150px;
+	position: absolute;
+	left: 600px;
+	top: 0;
+	font-family: sans-serif;
+	font-size: 15px;
+}
+.buttonURL {
+	background-color: #DDD;
+}
 
 </style>
 
@@ -245,9 +254,24 @@
 		<a id="buttonDownload"> download </a>
 	</div>
 	<div id="comp">
-		<input id="buttonChooseComponent" type="button" value="select&#x00A; shared window" />
+		<input id="buttonChooseComponent" type="button" value="select&#10; shared window" />
 	    <video id="componentVideo" autoplay="true"></video>
 		<input id="buttonStopComponent" type="button" value="stop" />
+	</div>
+	<div id="intro">
+		<input id="checkboxWatermark" type="checkbox" checked/>
+		<label> watermark </label>
+		<br>
+		<input id="checkboxIntro" type="checkbox"/>
+		<label> intro </label>
+		<br>
+		<input id="checkboxOutro" type="checkbox" />
+		<label> outro </label>
+		<br>
+		<input id="checkboxTitle" type="checkbox" />
+		<label> title </label>
+		<br>
+		<textarea id="textTitle" name="textTitle" rows="2" cols="25" style="position: absolute; left:25px; top:80px; font-family: sans-serif; font-size: 12px;">A Title for your Lecture</textarea>
 	</div>
 </div>
 
@@ -274,6 +298,24 @@ var buttonDownload = document.getElementById('buttonDownload');
 var buttonChooseComponent = document.getElementById('buttonChooseComponent');
 var buttonStopComponent = document.getElementById('buttonStopComponent');
 var comp = document.getElementById('comp');
+var textTitle = document.getElementById('textTitle');
+var checkboxWatermark = document.getElementById('checkboxWatermark');
+var checkboxIntro = document.getElementById('checkboxIntro');
+var checkboxOutro = document.getElementById('checkboxOutro');
+var checkboxTitle = document.getElementById('checkboxTitle');
+
+var watermarkImage = document.createElement("img");
+//watermarkImage.src = "kings/Watermark.png";
+watermarkImage.src = "kings/photo.jpg";
+//watermarkImage.crossOrigin = 'anonymous'; 
+var introVideo = document.createElement("video");
+introVideo.src = "kings/Intro.mp4";
+introVideo.type = "video/mp4";
+
+cameraVideo.muted = true;
+componentVideo.muted = true;
+mainVideo.muted = true;
+secondaryVideo.muted = true;
 
 var controlsVideoMaxWidth = 150;
 var controlsVideoMaxHeight = 150;
@@ -296,6 +338,8 @@ var paused = 0;
 var playingback = 0;
 var fadingDown = 0;
 var fadingUp = 0;
+var playingIntro = 0;
+
 var changeMain = 1;
 
 var mediaRecorder;
@@ -413,6 +457,7 @@ function setState(state) {
 var lightInterval;
 function startRecord() {
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
+//	var canvasStream = new MediaStream(canvas.captureStream(25));
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -426,6 +471,12 @@ function startRecord() {
 		playbackRatio = mainRatio;
 	};
 	paused = 0;
+//	if (checkboxIntro.checked)
+	introVideo.play();
+//	playingIntro = 1;
+	introVideo.addEventListener('ended',function() {
+		playingIntro=0;
+	});
 	mediaRecorder.start();
 	var lightIntensity=5;
 	var lightChange = 1;
@@ -440,8 +491,27 @@ function startRecord() {
 function stopRecord() {
 	mediaRecorder.requestData();
 	mediaRecorder.stop();
+	if (playingIntro) {
+		playingIntro = 0;
+		introVideo.pause();
+		introVideo.currentTime=0;
+	}
 	clearInterval(lightInterval);
 	light.style.backgroundColor = "#000";
+}
+
+function pauseRecord() {
+	mediaRecorder.pause();
+	if (playingIntro) {
+		introVideo.pause();
+	}
+}
+
+function restartRecord() {
+	if (playingIntro) {
+		introVideo.play();
+	}
+	mediaRecorder.resume();
 }
 
 // done at the start
@@ -463,14 +533,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		cameraVideo.srcObject = null;
     	setState();
     }
-    cameraVideo.muted = true;
-    componentVideo.muted = true;
-    mainVideo.muted = true;
-    secondaryVideo.muted = true;
-	recording = 0;
-	playingback = 0;
-	fadingDown = 0;
-	fadingUp = 0;
 	context = canvas.getContext('2d');
 	var alpha=1;
 	recordInterval = window.setInterval(function() {
@@ -479,20 +541,21 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		var w = h * mainRatio;
 		canvas.width = w;
 		canvas.height = h;
-		if ((fadingDown || fadingUp) && changeMain) {
-			context.globalAlpha = alpha;
+		if (playingIntro) {
+			context.drawImage(introVideo,0,0,w,h);
+		} else {
+			if ((fadingDown || fadingUp) && changeMain) {
+				context.globalAlpha = alpha;
+			}
+			if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
+			if ((fadingDown || fadingUp) && !changeMain) {
+				context.globalAlpha = alpha;
+			}
+			if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
+			context.globalAlpha = 0.5;
+			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
 		}
-		if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
-		if ((fadingDown || fadingUp) && !changeMain) {
-			context.globalAlpha = alpha;
-		}
-		if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 		if (fadingDown) {
-/*
-			context.globalAlpha = alpha;
-			context.fillStyle = "black";
-			context.fillRect(0, 0, w, h);
-			*/
 			alpha = alpha - 0.1;
 			if (alpha<=0) {
 				fadingDown = 0;
@@ -502,21 +565,17 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			}
 		}
 		if (fadingUp) {
-/*
-			context.globalAlpha = alpha;
-			context.fillStyle = "black";
-			context.fillRect(0, 0, w, h);
-			*/
 			alpha = alpha + 0.1;
 			if (alpha>=1) {
 				alpha = 1;
 				fadingUp = 0;
 			}
 		}
-	}, 40);
+	}, 20);
 });
 
 document.addEventListener('keydown', (event) => {
+	if (document.activeElement === textTitle) return;
 	const keyName = event.key;
 	if (keyName == "1") document.getElementById('buttonConf1').click();
 	if (keyName == "2") document.getElementById('buttonConf2').click();
@@ -566,12 +625,12 @@ buttonPlayback.addEventListener('click', function() {
 buttonPause.addEventListener('click', function() {
 	if (recording) {
 		if (!paused) {
-			mediaRecorder.pause();
+			pauseRecord();
 			paused=1;
 			buttonPause.style.backgroundColor = "#BBF";
 		}
 		else {
-			mediaRecorder.resume();
+			restartRecord();
 			paused=0;
 			buttonPause.style.backgroundColor = "#DDD";
 		}
