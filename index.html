@@ -502,26 +502,27 @@ function stopRecorder() {
 }
 
 function stopRecord() {
-	return new Promise((res,rej)=> {
-		if (playingOutro) rej();
-		if (checkboxOutro.checked) {
-			outroVideo.play();
-			playingOutro = 1;
-			outroVideo.addEventListener('ended',function() {
-				stopRecorder();
-				playingOutro=0;
-				res();
-			});
-		} else {
+	if (playingOutro) return;
+	if (checkboxOutro.checked) {
+		buttonRecord.value = "stopping...";
+		outroVideo.play();
+		playingOutro = 1;
+		outroVideo.addEventListener('ended',function() {
 			stopRecorder();
-			res();
-		}
-		if (playingIntro) {
-			playingIntro = 0;
-			introVideo.pause();
-			introVideo.currentTime=0;
-		}
-	});
+			playingOutro=0;
+			buttonRecord.value = "rec";
+			recording = 0;
+		});
+	} else {
+		stopRecorder();
+		buttonRecord.value = "rec";
+		recording = 0;
+	}
+	if (playingIntro) {
+		playingIntro = 0;
+		introVideo.pause();
+		introVideo.currentTime=0;
+	}
 }
 
 function pauseRecord() {
@@ -630,10 +631,7 @@ buttonRecord.addEventListener('click', function() {
 	if (!mainVideo.srcObject) return;
 	if (fadingDown || fadingUp || playingback) return;
 	if (recording) {
-		stopRecord().then(()=>{
-			buttonRecord.value = "rec";
-			recording = 0;
-		});
+		stopRecord();
 	} else {
 		startRecord();
 		buttonRecord.value = "stop";
