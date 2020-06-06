@@ -259,7 +259,7 @@
 		<input id="buttonStopComponent" type="button" value="stop" />
 	</div>
 	<div id="intro">
-		<input id="checkboxWatermark" type="checkbox" checked/>
+		<input id="checkboxWatermark" type="checkbox" />
 		<label> watermark </label>
 		<br>
 		<input id="checkboxIntro" type="checkbox"/>
@@ -309,6 +309,9 @@ watermarkImage.src = "kings/Watermark.png";
 var introVideo = document.createElement("video");
 introVideo.src = "kings/Intro.mp4";
 introVideo.type = "video/mp4";
+var outroVideo = document.createElement("video");
+outroVideo.src = "kings/Outro.mp4";
+outroVideo.type = "video/mp4";
 
 cameraVideo.muted = true;
 componentVideo.muted = true;
@@ -337,6 +340,7 @@ var playingback = 0;
 var fadingDown = 0;
 var fadingUp = 0;
 var playingIntro = 0;
+var playingOutro = 0;
 
 var changeMain = 1;
 
@@ -452,8 +456,10 @@ function setState(state) {
 	if (currentState != virtualState) fadingDown = 1;
 }
 
+var lightInterval;
 function setRecorder() {
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
+	alert('a');
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -468,17 +474,6 @@ function setRecorder() {
 	};
 	paused = 0;
 	mediaRecorder.start();
-}
-
-var lightInterval;
-function startRecord() {
-//	if (checkboxIntro.checked)
-	introVideo.play();
-	playingIntro = 1;
-	introVideo.addEventListener('ended',function() {
-		playingIntro=0;
-	});
-	window.setTimeout(setRecorder,100);
 	var lightIntensity=5;
 	var lightChange = 1;
 	lightInterval = window.setInterval(function() {
@@ -489,16 +484,38 @@ function startRecord() {
 	},50);
 }
 
-function stopRecord() {
+function startRecord() {
+	if (checkboxIntro.checked) {
+		introVideo.play();
+		playingIntro = 1;
+		introVideo.addEventListener('ended',function() {
+			playingIntro=0;
+		});
+	}
+	window.setTimeout(setRecorder,100);
+}
+
+function stopRecorder() {
 	mediaRecorder.requestData();
 	mediaRecorder.stop();
+	clearInterval(lightInterval);
+	light.style.backgroundColor = "#000";
+}
+
+function stopRecord() {
+	if (checkboxOutro.checked) {
+		outroVideo.play();
+		playingOutro = 1;
+		introVideo.addEventListener('ended',function() {
+			stopRecorder();
+			playingOutro=0;
+		});
+	} else stopRecorder();
 	if (playingIntro) {
 		playingIntro = 0;
 		introVideo.pause();
 		introVideo.currentTime=0;
 	}
-	clearInterval(lightInterval);
-	light.style.backgroundColor = "#000";
 }
 
 function pauseRecord() {
@@ -542,7 +559,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		var w = h * mainRatio;
 		canvas.width = w;
 		canvas.height = h;
-		if (playingIntro) {
+		if (playingOutro) {
+			context.drawImage(outroVideo,0,0,w,h);
+		}
+		else if (playingIntro) {
 			context.drawImage(introVideo,0,0,w,h);
 		} else {
 			if ((fadingDown || fadingUp) && changeMain) {
