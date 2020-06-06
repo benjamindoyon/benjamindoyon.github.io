@@ -305,9 +305,7 @@ var checkboxOutro = document.getElementById('checkboxOutro');
 var checkboxTitle = document.getElementById('checkboxTitle');
 
 var watermarkImage = document.createElement("img");
-//watermarkImage.src = "kings/Watermark.png";
-watermarkImage.src = "kings/photo.jpg";
-//watermarkImage.crossOrigin = 'anonymous'; 
+watermarkImage.src = "kings/Watermark.png";
 var introVideo = document.createElement("video");
 introVideo.src = "kings/Intro.mp4";
 introVideo.type = "video/mp4";
@@ -457,7 +455,6 @@ function setState(state) {
 var lightInterval;
 function startRecord() {
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
-//	var canvasStream = new MediaStream(canvas.captureStream(25));
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -473,7 +470,7 @@ function startRecord() {
 	paused = 0;
 //	if (checkboxIntro.checked)
 	introVideo.play();
-//	playingIntro = 1;
+	playingIntro = 1;
 	introVideo.addEventListener('ended',function() {
 		playingIntro=0;
 	});
