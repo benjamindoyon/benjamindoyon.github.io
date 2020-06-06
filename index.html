@@ -452,14 +452,8 @@ function setState(state) {
 	if (currentState != virtualState) fadingDown = 1;
 }
 
-var lightInterval;
-function startRecord() {
-//	if (checkboxIntro.checked)
-	introVideo.play();
-	playingIntro = 1;
-	introVideo.addEventListener('ended',function() {
-		playingIntro=0;
-	});
+function setRecorder() {
+	alert('a');
 	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
@@ -474,7 +468,18 @@ function startRecord() {
 		playbackRatio = mainRatio;
 	};
 	paused = 0;
-	window.setTimeout(mediaRecorder.start,100);
+	mediaRecorder.start();
+}
+
+var lightInterval;
+function startRecord() {
+//	if (checkboxIntro.checked)
+	introVideo.play();
+	playingIntro = 1;
+	introVideo.addEventListener('ended',function() {
+		playingIntro=0;
+	});
+	window.setTimeout(setRecorder,100);
 	var lightIntensity=5;
 	var lightChange = 1;
 	lightInterval = window.setInterval(function() {
