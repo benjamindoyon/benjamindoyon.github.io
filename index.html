@@ -503,10 +503,11 @@ function stopRecorder() {
 
 function stopRecord() {
 	return new Promise((res,rej)=> {
+		if (playingOutro) rej();
 		if (checkboxOutro.checked) {
 			outroVideo.play();
 			playingOutro = 1;
-			ontroVideo.addEventListener('ended',function() {
+			outroVideo.addEventListener('ended',function() {
 				stopRecorder();
 				playingOutro=0;
 				res();
@@ -528,11 +529,17 @@ function pauseRecord() {
 	if (playingIntro) {
 		introVideo.pause();
 	}
+	if (playingOutro) {
+		outroVideo.pause();
+	}
 }
 
 function restartRecord() {
 	if (playingIntro) {
 		introVideo.play();
+	}
+	if (playingOutro) {
+		outroVideo.play();
 	}
 	mediaRecorder.resume();
 }
