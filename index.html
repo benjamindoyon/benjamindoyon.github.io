@@ -173,11 +173,20 @@
 	font-size: 15px;
 	text-align: center;
 }
+#intro {
+	width: 100px;
+	height: 150px;
+	position: absolute;
+	left: 450px;
+	top: 0;
+	font-family: sans-serif;
+	font-size: 15px;
+}
 #comp {
 	width: 150px;
 	height: 150px;
 	position: absolute;
-	left: 450px;
+	left: 550px;
 	top: 0;
 }
 #buttonChooseComponent {
@@ -211,16 +220,7 @@
   	background-color: #444;
 	visibility: hidden;
 }
-#intro {
-	width: 150px;
-	height: 150px;
-	position: absolute;
-	left: 600px;
-	top: 0;
-	font-family: sans-serif;
-	font-size: 15px;
-}
-.buttonURL {
+.buttonbg {
 	background-color: #DDD;
 }
 
@@ -253,12 +253,8 @@
 		<input id="buttonPlayback" type="button" value="playback" />
 		<a id="buttonDownload"> download </a>
 	</div>
-	<div id="comp">
-		<input id="buttonChooseComponent" type="button" value="select&#10; shared window" />
-	    <video id="componentVideo" autoplay="true"></video>
-		<input id="buttonStopComponent" type="button" value="stop" />
-	</div>
 	<div id="intro">
+		<div style="width: 5px; height: 5px;" ></div>
 		<input id="checkboxWatermark" type="checkbox" />
 		<label> watermark </label>
 		<br>
@@ -269,9 +265,15 @@
 		<label> outro </label>
 		<br>
 		<input id="checkboxTitle" type="checkbox" />
-		<label> title </label>
+		<label id="labelTitle"> title </label>
+		<input id="buttonTitle" type="button" class="buttonbg" value="set"/>
 		<br>
-		<textarea id="textTitle" name="textTitle" rows="2" cols="25" style="position: absolute; left:25px; top:80px; font-family: sans-serif; font-size: 12px;">A Title for your Lecture</textarea>
+		<textarea id="textTitle" rows="2" cols="20" style="z-index: 1; position: absolute; left:10px; top:85px; font-family: sans-serif; font-size: 12px; visibility: hidden">Title</textarea>
+	</div>
+	<div id="comp">
+		<input id="buttonChooseComponent" type="button" value="select&#10; shared window" />
+	    <video id="componentVideo" autoplay="true"></video>
+		<input id="buttonStopComponent" type="button" value="stop" />
 	</div>
 </div>
 
@@ -303,6 +305,8 @@ var checkboxWatermark = document.getElementById('checkboxWatermark');
 var checkboxIntro = document.getElementById('checkboxIntro');
 var checkboxOutro = document.getElementById('checkboxOutro');
 var checkboxTitle = document.getElementById('checkboxTitle');
+var labelTitle = document.getElementById('labelTitle');
+var buttonTitle = document.getElementById('buttonTitle');
 
 var watermarkImage = document.createElement("img");
 watermarkImage.src = "kings/Watermark.png";
@@ -312,6 +316,8 @@ introVideo.type = "video/mp4";
 var outroVideo = document.createElement("video");
 outroVideo.src = "kings/Outro.mp4";
 outroVideo.type = "video/mp4";
+
+var theTitleLines = [];
 
 cameraVideo.muted = true;
 componentVideo.muted = true;
@@ -341,6 +347,7 @@ var fadingDown = 0;
 var fadingUp = 0;
 var playingIntro = 0;
 var playingOutro = 0;
+var playingTitle = 0;
 
 var changeMain = 1;
 
@@ -409,6 +416,7 @@ function setButtons() {
 }
 
 function changeState() {
+	playingTitle = 0;
 	if (selectedState == 1) {
 		setMain(cameraVideo);
 		setSecondary(null);
@@ -483,14 +491,22 @@ function setRecorder() {
 	},50);
 }
 
+function continueSequence() {
+	if (checkboxTitle.checked) {
+		playingTitle = 1;
+		window.setTimeout(()=>{fadingDown = 1;},2000);
+	}
+}
+
 function startRecord() {
 	if (checkboxIntro.checked) {
 		introVideo.play();
 		playingIntro = 1;
 		introVideo.addEventListener('ended',function() {
 			playingIntro=0;
+			continueSequence();
 		});
-	}
+	} else continueSequence();
 	window.setTimeout(setRecorder,100);
 }
 
@@ -504,7 +520,7 @@ function stopRecorder() {
 function stopRecord() {
 	if (playingOutro) return;
 	if (checkboxOutro.checked) {
-		buttonRecord.value = "stopping...";
+		buttonRecord.value = "...";
 		outroVideo.play();
 		playingOutro = 1;
 		outroVideo.addEventListener('ended',function() {
@@ -523,6 +539,7 @@ function stopRecord() {
 		introVideo.pause();
 		introVideo.currentTime=0;
 	}
+	if (playingTitle) playingTitle=0;
 }
 
 function pauseRecord() {
@@ -578,14 +595,26 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		else if (playingIntro) {
 			context.drawImage(introVideo,0,0,w,h);
 		} else {
-			if ((fadingDown || fadingUp) && changeMain) {
-				context.globalAlpha = alpha;
+			if (playingTitle) {
+				if (fadingDown || fadingUp) {
+					context.globalAlpha = alpha;
+				}
+				context.fillStyle = "white";
+				context.fill();
+				context.font = '48px sans-serif';
+				context.textAlign = "center"; 
+				let size = theTitleLines.length;
+				theTitleLines.forEach((s,i)=>context.fillText(s,w/2,(h-size*48)/2+48*i));
+			} else {
+				if ((fadingDown || fadingUp) && changeMain) {
+					context.globalAlpha = alpha;
+				}
+				if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
+				if ((fadingDown || fadingUp) && !changeMain) {
+					context.globalAlpha = alpha;
+				}
+				if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 			}
-			if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
-			if ((fadingDown || fadingUp) && !changeMain) {
-				context.globalAlpha = alpha;
-			}
-			if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 			context.globalAlpha = 0.5;
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
 		}
@@ -667,6 +696,24 @@ buttonPause.addEventListener('click', function() {
 			buttonPause.style.backgroundColor = "#DDD";
 		}
 	}	
+});
+
+buttonTitle.addEventListener('click', function() {
+	if (textTitle.style.visibility==="visible") {
+		textTitle.style.visibility="hidden";
+		buttonTitle.value="set";
+		theTitleLines = textTitle.value.split('\n');
+	} else {
+		textTitle.style.visibility="visible";
+		buttonTitle.value="ok";
+		checkboxTitle.checked= true;
+	}
+});
+
+textTitle.addEventListener("focusout", function() {
+	textTitle.style.visibility="hidden";
+	buttonTitle.value="set";
+	theTitleLines = textTitle.value.split('\n');
 });
 
 buttonChooseComponent.addEventListener('click', function() {
