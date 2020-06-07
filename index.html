@@ -595,7 +595,10 @@ document.addEventListener("DOMContentLoaded", function(event) {
 		var w = h * mainRatio;
 		canvas.width = w;
 		canvas.height = h;
-		if (playingOutro) {
+		if (playingback) {
+			context.fillStyle = "black";
+			context.fill();
+		} else if (playingOutro) {
 			context.drawImage(outroVideo,0,0,w,h);
 		}
 		else if (playingIntro) {
@@ -678,11 +681,13 @@ buttonPlayback.addEventListener('click', function() {
 	if (fadingDown || fadingUp || recording) return;
 	if (playingback) {
 		playbackVideo.style.visibility = "hidden";
+//		canvas.style.visibility = "visible";
 		buttonPlayback.style.backgroundColor = "#DDD";
 		playingback = 0;
 		sizeAll();
 	} else {
 		playbackVideo.style.visibility = "visible";
+//		canvas.style.visibility = "hidden";
 		buttonPlayback.style.backgroundColor = "#BBF";
 		playingback = 1;
 		sizeAll();
