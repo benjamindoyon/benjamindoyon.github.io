@@ -533,6 +533,8 @@ function stopRecord() {
 		buttonRecord.value = "...";
 		outroVideo.play();
 		playingOutro = 1;
+		mainRatio = outroVideo.videoWidth/outroVideo.videoHeight;
+		sizeAll();
 		outroVideo.addEventListener('ended',function() {
 			continueStopSequence();
 			playingOutro=0;
