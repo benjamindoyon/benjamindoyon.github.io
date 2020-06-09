@@ -317,6 +317,10 @@ var outroVideo = document.createElement("video");
 outroVideo.src = "kings/Outro.mp4";
 outroVideo.type = "video/mp4";
 
+var pixels = 1000000;
+var framePerSecond = 25;
+var fixedRatioMode = true;
+
 var theTitleLines = [];
 
 cameraVideo.muted = true;
@@ -324,11 +328,11 @@ componentVideo.muted = true;
 mainVideo.muted = true;
 secondaryVideo.muted = true;
 
-var controlsVideoMaxWidth = 150;
-var controlsVideoMaxHeight = 150;
-var totalBorder = 60;
-var pixels = 1000000;
+const controlsVideoMaxWidth = 150;
+const controlsVideoMaxHeight = 150;
+const totalBorder = 60;
 
+var fixedRatio=1;
 var mainRatio=1;
 var playbackRatio = 1;
 var secondaryRatio=1;
@@ -348,6 +352,7 @@ var fadingUp = 0;
 var playingIntro = 0;
 var playingOutro = 0;
 var playingTitle = 0;
+var alpha=1;
 
 var changeMain = 1;
 
@@ -466,7 +471,7 @@ function changeState(state) {
 
 var lightInterval;
 function setRecorder() {
-	var canvasStream = new MediaStream(canvas.captureStream(25).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
+	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -502,11 +507,11 @@ function startRecord() {
 	if (checkboxIntro.checked) {
 		introVideo.play();
 		playingIntro = 1;
-		mainRatio = introVideo.videoWidth/introVideo.videoHeight;
-		sizeAll();
+//		mainRatio = introVideo.videoWidth/introVideo.videoHeight;
+//		sizeAll();
 		introVideo.addEventListener('ended',function() {
 			playingIntro=0;
-			setState();
+//			setState();
 			continueStartSequence();
 		});
 	} else continueStartSequence();
@@ -524,7 +529,7 @@ function continueStopSequence() {
 	stopRecorder();
 	buttonRecord.value = "rec";
 	recording = 0;
-	setState();
+//	setState();
 }
 
 function stopRecord() {
@@ -533,8 +538,8 @@ function stopRecord() {
 		buttonRecord.value = "...";
 		outroVideo.play();
 		playingOutro = 1;
-		mainRatio = outroVideo.videoWidth/outroVideo.videoHeight;
-		sizeAll();
+//		mainRatio = outroVideo.videoWidth/outroVideo.videoHeight;
+//		sizeAll();
 		outroVideo.addEventListener('ended',function() {
 			continueStopSequence();
 			playingOutro=0;
@@ -569,7 +574,7 @@ function restartRecord() {
 }
 
 // done at the start
-document.addEventListener("DOMContentLoaded", function(event) {
+function starting() {
 	if (navigator.mediaDevices.getUserMedia) {
  	 	navigator.mediaDevices.getUserMedia({ audio: true, video: true })
     	.then(function (stream) {
@@ -588,9 +593,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     	changeState();
     }
 	context = canvas.getContext('2d');
-	var alpha=1;
 	recordInterval = window.setInterval(function() {
-		// h * h * ratio = pixels
+		// note: h * h * ratio = pixels
 		var h = Math.sqrt(pixels / mainRatio);
 		var w = h * mainRatio;
 		canvas.width = w;
@@ -599,10 +603,22 @@ document.addEventListener("DOMContentLoaded", function(event) {
 			context.fillStyle = "black";
 			context.fill();
 		} else if (playingOutro) {
-			context.drawImage(outroVideo,0,0,w,h);
+			let sw=outroVideo.videoWidth;
+			let sh=outroVideo.videoHeight;
+			let [newsw,newsh] = resize(sw/sh,w,h);
+			let sy = (h-newsh)/2;
+			let sx = (w-newsw)/2;
+			context.drawImage(outroVideo,sx,sy,newsw,newsh);
+//			context.drawImage(ontroVideo,0,0,w,h);
 		}
 		else if (playingIntro) {
-			context.drawImage(introVideo,0,0,w,h);
+			let sw=introVideo.videoWidth;
+			let sh=introVideo.videoHeight;
+			let [newsw,newsh] = resize(sw/sh,w,h);
+			let sy = (h-newsh)/2;
+			let sx = (w-newsw)/2;
+			context.drawImage(introVideo,sx,sy,newsw,newsh);
+//			context.drawImage(introVideo,0,0,w,h);
 		} else {
 			if (playingTitle) {
 				if (fadingDown || fadingUp) {
@@ -643,9 +659,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
 				fadingUp = 0;
 			}
 		}
-	}, 20);
-});
+	}, 1000/framePerSecond);
+}
 
+if (document.readyState === 'loading') {  // Loading hasn't finished yet
+  document.addEventListener('DOMContentLoaded', starting);
+} else {  // `DOMContentLoaded` has already fired
+  starting();
+}
+ 
 document.addEventListener('keydown', (event) => {
 	if (document.activeElement === textTitle) return;
 	const keyName = event.key;
