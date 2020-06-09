@@ -334,6 +334,8 @@ const totalBorder = 60;
 
 var fixedRatio=1;
 var mainRatio=1;
+var mainWidthFactor=1;
+var mainHeightFactor=1;
 var playbackRatio = 1;
 var secondaryRatio=1;
 var secondaryWidthFactor=1/4;
@@ -373,21 +375,29 @@ function resize(whratio, wmax, hmax) {
 	return [wnew, hnew];
 }
 
-function resizecss(w, h, wmax, hmax) {
-	const [wnew, hnew] = resize(w, h, wmax, hmax);
+function resizecss(whratio, wmax, hmax) {
+	const [wnew, hnew] = resize(whratio, wmax, hmax);
 	return [tocss(wnew), tocss(hnew)];
 }
 
 function sizeAll() {
 	var w,h;
 	factor = factorList[currentState];
-	if (!playingback) [w,h] = resize(mainRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
-	else [w,h] = resize(playbackRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+	if (fixedRatioMode) {
+		[w,h] = resize(fixedRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+		let [sw,sh] = resize(mainRatio,w,h);
+		[mainVideo.style.width, mainVideo.style.height] = [tocss(sw),tocss(sh)];
+		[mainWidthFactor, mainHeightFactor] = [sw/w, sh/h];
+	} else {
+		if (!playingback) [w,h] = resize(mainRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+		else [w,h] = resize(playbackRatio,window.innerWidth-totalBorder,window.innerHeight-controlsVideoMaxHeight-totalBorder);
+		[mainVideo.style.width, mainVideo.style.height] = [tocss(w), tocss(h)];
+		[mainWidthFactor, mainHeightFactor] = [1,1];
+	}
 	[container.style.width, container.style.height] = [tocss(w), tocss(h)];
-	[mainVideo.style.width, mainVideo.style.height] = [container.style.width, container.style.height];
 	[playbackVideo.style.width, playbackVideo.style.height] = [container.style.width, container.style.height];
 	[canvas.style.width, canvas.style.height] = [container.style.width, container.style.height];
-	const [sw,sh] = resize(secondaryRatio,w*factor,h*factor);
+	let [sw,sh] = resize(secondaryRatio,w*factor,h*factor);
 	[secondaryVideo.style.width, secondaryVideo.style.height] = [tocss(sw), tocss(sh)];
 	[secondaryWidthFactor, secondaryHeightFactor] = [sw/w, sh/h];
 }
@@ -507,11 +517,13 @@ function startRecord() {
 	if (checkboxIntro.checked) {
 		introVideo.play();
 		playingIntro = 1;
-//		mainRatio = introVideo.videoWidth/introVideo.videoHeight;
-//		sizeAll();
+		if (!fixedRatioMode) {
+			mainRatio = introVideo.videoWidth/introVideo.videoHeight;
+			sizeAll();
+		}
 		introVideo.addEventListener('ended',function() {
 			playingIntro=0;
-//			setState();
+			if (!fixedRatioMode) setState();
 			continueStartSequence();
 		});
 	} else continueStartSequence();
@@ -529,7 +541,7 @@ function continueStopSequence() {
 	stopRecorder();
 	buttonRecord.value = "rec";
 	recording = 0;
-//	setState();
+	if (!fixedRatioMode) setState();
 }
 
 function stopRecord() {
@@ -538,8 +550,10 @@ function stopRecord() {
 		buttonRecord.value = "...";
 		outroVideo.play();
 		playingOutro = 1;
-//		mainRatio = outroVideo.videoWidth/outroVideo.videoHeight;
-//		sizeAll();
+		if (!fixedRatioMode) {
+			mainRatio = outroVideo.videoWidth/outroVideo.videoHeight;
+			sizeAll();
+		}
 		outroVideo.addEventListener('ended',function() {
 			continueStopSequence();
 			playingOutro=0;
@@ -595,30 +609,37 @@ function starting() {
 	context = canvas.getContext('2d');
 	recordInterval = window.setInterval(function() {
 		// note: h * h * ratio = pixels
-		var h = Math.sqrt(pixels / mainRatio);
-		var w = h * mainRatio;
+		var h,w;
+		if (fixedRatioMode) {
+			h = Math.sqrt(pixels / fixedRatio);
+			w = h * fixedRatio;
+		} else {
+			h = Math.sqrt(pixels / mainRatio);
+			w = h * mainRatio;
+		}
 		canvas.width = w;
 		canvas.height = h;
 		if (playingback) {
 			context.fillStyle = "black";
 			context.fill();
 		} else if (playingOutro) {
-			let sw=outroVideo.videoWidth;
+/*			let sw=outroVideo.videoWidth;
 			let sh=outroVideo.videoHeight;
 			let [newsw,newsh] = resize(sw/sh,w,h);
 			let sy = (h-newsh)/2;
 			let sx = (w-newsw)/2;
-			context.drawImage(outroVideo,sx,sy,newsw,newsh);
-//			context.drawImage(ontroVideo,0,0,w,h);
+			context.drawImage(outroVideo,sx,sy,newsw,newsh);*/
+			context.drawImage(outroVideo,0,0,w,h);
 		}
 		else if (playingIntro) {
+/*
 			let sw=introVideo.videoWidth;
 			let sh=introVideo.videoHeight;
 			let [newsw,newsh] = resize(sw/sh,w,h);
 			let sy = (h-newsh)/2;
 			let sx = (w-newsw)/2;
-			context.drawImage(introVideo,sx,sy,newsw,newsh);
-//			context.drawImage(introVideo,0,0,w,h);
+			context.drawImage(introVideo,sx,sy,newsw,newsh);*/
+			context.drawImage(introVideo,0,0,w,h);
 		} else {
 			if (playingTitle) {
 				if (fadingDown || fadingUp) {
@@ -634,7 +655,8 @@ function starting() {
 				if ((fadingDown || fadingUp) && changeMain) {
 					context.globalAlpha = alpha;
 				}
-				if (mainVideo.srcObject) context.drawImage(mainVideo,0,0,w,h);
+				let [sx,sy] = [(1-mainWidthFactor)*w/2, (1-mainHeightFactor)*h/2];
+				if (mainVideo.srcObject) context.drawImage(mainVideo,sx,sy,mainWidthFactor*w,mainHeightFactor*h);
 				if ((fadingDown || fadingUp) && !changeMain) {
 					context.globalAlpha = alpha;
 				}
@@ -667,7 +689,13 @@ if (document.readyState === 'loading') {  // Loading hasn't finished yet
 } else {  // `DOMContentLoaded` has already fired
   starting();
 }
- 
+
+introVideo.addEventListener("loadedmetadata", function() {
+	if (!fixedRatioMode) return;
+	fixedRatio = introVideo.videoWidth / introVideo.videoHeight;
+	sizeAll();
+});
+
 document.addEventListener('keydown', (event) => {
 	if (document.activeElement === textTitle) return;
 	const keyName = event.key;
