@@ -490,14 +490,15 @@ function changeState(state) {
 var lightInterval;
 function setRecorder() {
 //	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
-	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond));
-	canvasStream.addTrack(cameraVideo.srcObject.getAudioTracks()[0]);
+//	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond));
+//	canvasStream.addTrack(cameraVideo.srcObject.getAudioTracks()[0]);
+	var canvasStream = new MediaStream([canvas.captureStream(framePerSecond).getTracks()[0],cameraVideo.srcObject.getAudioTracks()[0]]);
 	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
 	mediaRecorder = new MediaRecorder(canvasStream,options);
 	mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
 	mediaRecorder.onstop = event => {
-		canvasStream.getTracks().forEach(track => track.stop());
+//		canvasStream.getTracks().forEach(track => track.stop());
 		let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
 	    playbackVideo.src = URL.createObjectURL(recordedBlob);
     	buttonDownload.href = playbackVideo.src;
@@ -825,7 +826,7 @@ comp.addEventListener('mouseout', function() {
 
 buttonStopComponent.addEventListener('click', stopCapture);
 function stopCapture(evt) {
-	if (fadingDown || fadingUp || playingback) return;
+	if (playingTitle || playingIntro || playingOutro || fadingDown || fadingUp || playingback) return;
 	componentVideo.style.visibility = "hidden";
     buttonChooseComponent.style.visibility="visible";
 	buttonStopComponent.style.visibility = "hidden";
