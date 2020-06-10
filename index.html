@@ -405,15 +405,23 @@ function sizeAll() {
 function setMain(v) {
 	if (!changeMain) return;
 	mainVideo.srcObject = v.srcObject;
-    if (v.srcObject) mainRatio = v.videoWidth/v.videoHeight;
+    if (v.srcObject) mainRatio = (v.videoWidth-v.clipLeft-v.clipRight)/(v.videoHeight-v.clipUp-v.clipDown);
     else mainRatio = 1;
-}
+    mainVideo.clipLeft = v.clipLeft;
+    mainVideo.clipUp = v.clipUp;
+   	mainVideo.clipWidth = v.videoWidth -v.clipLeft-v.clipRight;
+    mainVideo.clipHeight = v.videoHeight -v.clipUp-v.clipDown;
+ }
 
 function setSecondary(v) {
 	if (v && v.srcObject) {
 		secondaryVideo.srcObject = v.srcObject;
-    	secondaryRatio = v.videoWidth/v.videoHeight;
-	} else {
+    	secondaryRatio = (v.videoWidth-v.clipLeft-v.clipRight)/(v.videoHeight-v.clipUp-v.clipDown);
+    	secondaryVideo.clipLeft = v.clipLeft;
+    	secondaryVideo.clipUp = v.clipUp;
+    	secondaryVideo.clipWidth = v.videoWidth -v.clipLeft-v.clipRight;
+    	secondaryVideo.clipHeight = v.videoHeight -v.clipUp-v.clipDown;
+ 	} else {
 		secondaryVideo.srcObject = null;
     	secondaryRatio = 1;
 	}
@@ -465,7 +473,7 @@ function setState() {
 }
 
 function changeState(state) {
-	if (fadingDown || fadingUp || playingback) return;
+	if (playingTitle || playingIntro || playingOutro || fadingDown || fadingUp || playingback) return;
 	if (!cameraVideo.srcObject) selectedState = 4;
 	if (state && cameraVideo.srcObject) selectedState = state;
 	if (!componentVideo.srcObject) virtualState = 1;
@@ -606,6 +614,14 @@ function starting() {
 		cameraVideo.srcObject = null;
     	changeState();
     }
+    componentVideo.clipUp=0;
+    componentVideo.clipDown=0;
+    componentVideo.clipLeft=0;
+    componentVideo.clipRight=0;
+    cameraVideo.clipUp=0;
+    cameraVideo.clipDown=0;
+    cameraVideo.clipLeft=0;
+    cameraVideo.clipRight=0;
 	context = canvas.getContext('2d');
 	recordInterval = window.setInterval(function() {
 		// note: h * h * ratio = pixels
@@ -656,11 +672,11 @@ function starting() {
 					context.globalAlpha = alpha;
 				}
 				let [sx,sy] = [(1-mainWidthFactor)*w/2, (1-mainHeightFactor)*h/2];
-				if (mainVideo.srcObject) context.drawImage(mainVideo,sx,sy,mainWidthFactor*w,mainHeightFactor*h);
+				if (mainVideo.srcObject) context.drawImage(mainVideo,mainVideo.clipLeft,mainVideo.clipUp,mainVideo.clipWidth,mainVideo.clipHeight,sx,sy,mainWidthFactor*w,mainHeightFactor*h);
 				if ((fadingDown || fadingUp) && !changeMain) {
 					context.globalAlpha = alpha;
 				}
-				if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
+				if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,secondaryVideo.clipLeft,secondaryVideo.clipUp,secondaryVideo.clipWidth,secondaryVideo.clipHeight,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 			}
 			context.globalAlpha = 0.5;
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
@@ -703,6 +719,7 @@ document.addEventListener('keydown', (event) => {
 	if (keyName == "2") document.getElementById('buttonConf2').click();
 	if (keyName == "3") document.getElementById('buttonConf3').click();
 	if (keyName == "4") document.getElementById('buttonConf4').click();
+	if (keyName == " ") document.getElementById('buttonRecord').click();
 });
 
 window.addEventListener("resize",sizeAll);
@@ -778,7 +795,7 @@ textTitle.addEventListener("focusout", function() {
 });
 
 buttonChooseComponent.addEventListener('click', function() {
-	if (fadingDown || fadingUp || playingback) return;
+	if (playingTitle || playingIntro || playingOutro || fadingDown || fadingUp || playingback) return;
 	if (navigator.mediaDevices.getDisplayMedia) {
  	 	navigator.mediaDevices.getDisplayMedia({ video: true })
     	.then(function (stream) {
