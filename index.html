@@ -161,17 +161,25 @@
 	background-color: #DDD;
 	font-size: 15px;
 }
-#buttonDownload {
-	width: 130px;
-	height: 15px;
+#buttonStitch {
+	width: 60px;
+	height: 30px;
 	position: absolute;
 	left: 10px;
-	bottom: 10px;
+	bottom: 0px;
+	border-radius: 5px;
+	background-color: #DDD;
+	font-size: 15px;
+}
+#buttonSave {
+	width: 60px;
+	height: 30px;
+	position: absolute;
+	left: 80px;
+	bottom: 0px;
 	border-radius: 5px;
 	background-color: #AFF;
-	font-family: sans-serif;
 	font-size: 15px;
-	text-align: center;
 }
 #comp {
 	width: 150px;
@@ -251,7 +259,9 @@
 		<input id="buttonRecord" type="button" value="rec" />
 		<input id="buttonPause" type="button" value="||" />
 		<input id="buttonPlayback" type="button" value="playback" />
-		<a id="buttonDownload"> download </a>
+		<input id="buttonSave" type="button" value="save" />
+		<input id="buttonStitch" type="button" value="stitch" />
+		<a id="buttonDownload" style="visibility: hidden"> download </a>
 	</div>
 	<div id="comp">
 		<input id="buttonChooseComponent" type="button" value="select&#10; shared window" />
@@ -260,13 +270,13 @@
 	</div>
 	<div id="intro">
 		<div style="width: 5px; height: 5px;" ></div>
-		<input id="checkboxWatermark" type="checkbox" checked />
+		<input id="checkboxWatermark" type="checkbox"  />
 		<label> watermark </label>
 		<br>
-		<input id="checkboxIntro" type="checkbox" checked/>
+		<input id="checkboxIntro" type="checkbox" />
 		<label> intro </label>
 		<br>
-		<input id="checkboxOutro" type="checkbox" checked/>
+		<input id="checkboxOutro" type="checkbox" />
 		<label> outro </label>
 		<br>
 		<input id="checkboxTitle" type="checkbox" />
@@ -297,6 +307,8 @@ var buttonRecord = document.getElementById('buttonRecord');
 var buttonPause = document.getElementById('buttonPause');
 var buttonPlayback = document.getElementById('buttonPlayback');
 var buttonDownload = document.getElementById('buttonDownload');
+var buttonStitch = document.getElementById('buttonStitch');
+var buttonSave = document.getElementById('buttonSave');
 var buttonChooseComponent = document.getElementById('buttonChooseComponent');
 var buttonStopComponent = document.getElementById('buttonStopComponent');
 var comp = document.getElementById('comp');
@@ -354,11 +366,15 @@ var fadingUp = 0;
 var playingIntro = 0;
 var playingOutro = 0;
 var playingTitle = 0;
+var comingBack = 0;
+var stitching = 0;
 var alpha=1;
 
 var changeMain = 1;
 
 var mediaRecorder;
+var stopImages = [];
+var numberStopImages = 0;
 
 function tocss(x) {
 	return x.toString() + "px";
@@ -488,26 +504,154 @@ function changeState(state) {
 }
 
 var lightInterval;
+var recordedChunks = [];
+var newChunkLength = 0;
+var lastChunkLength = 0;
+var recordedBlobList = [];
+var countVideoChunk;
+
+function stitchVideo() {
+	if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
+	playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+	countVideoChunk = 0;
+	stitching = 1;
+	playbackVideo.play();
+	var canvasStream = new MediaStream([canvas.captureStream(framePerSecond).getTracks()[0],playbackVideo.srcObject.getAudioTracks()[0]]);
+	alert('oui');
+	var options = { mimeType: "video/webm" };
+	recordedChunks = [];
+	mediaRecorder = new MediaRecorder(canvasStream,options);
+	mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+	mediaRecorder.onstop = event => {
+		recordedBlobList = [];
+		recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
+		URL.revokeObjectURL(playbackVideo.src);
+		playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+		countVideoChunk = 0;
+	}
+	mediaRecorder.start();
+}
+
+function saveVideo() {
+	for (let i=0; i<recordedBlobList.length; i++) {
+		if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
+		playbackVideo.src = URL.createObjectURL(recordedBlobList[i]);
+		buttonDownload.href = playbackVideo.src;
+		buttonDownload.download = "video"+i.toString()+".webm";
+		buttonDownload.click();
+	}
+	if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
+	playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+/* // probably not the right way, better to project onto canvas and record that
+	if (recordedBlobList.length == 1) {
+	} else {
+		alert('constructing video');
+		var options = { mimeType: "video/webm" };
+		var count=0;
+		var mr = null;
+		playbackVideo.onplay = function() {
+			if (!mr) {
+				alert('starting play');
+				var stream = playbackVideo.captureStream();
+				alert('...');
+				mr = new MediaRecorder(stream,options);
+				alert('...');
+				mr.ondataavailable = event => recordedChunks.push(event.data);
+				mr.onstop = event => {
+					alert('stopping..');
+					let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
+					playbackVideo.src = URL.createObjectURL(recordedBlob);
+					buttonDownload.href = playbackVideo.src;
+					buttonDownload.download = "RecordedVideo.webm";
+					alert('done');
+				};
+				mr.start();
+				alert('recording started');
+			}
+		}
+		playbackVideo.onended = function() {
+			alert('part: '+count.toString());
+			count++;
+			URL.revokeObjectURL(playbackVideo.src);
+			if (count < recordedBlobList.length) {
+				playbackVideo.src = URL.createObjectURL(recordedBlobList[count]);
+				playbackVideo.play();
+			} else {
+				alert('video constructed');
+				mr.stop();
+			}
+		};
+		recordedChunks = [];
+		alert('...');
+		playbackVideo.play();
+	}
+	*/
+}
+
+function stopEventRec(event) {
+	if (discarded) {
+		recordedChunks.length = lastChunkLength;
+		if (recordedChunks.length>0) recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
+//		alert(recordedBlobList.length.toString());
+	} else {
+		recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
+//		alert(recordedBlobList.length.toString());
+		playbackRatio = mainRatio;
+		playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+		countVideoChunk=0;
+		playbackVideo.onended = function() {
+			countVideoChunk++;
+			var source = playbackVideo.src;
+			if (countVideoChunk < recordedBlobList.length) {
+				playbackVideo.src = URL.createObjectURL(recordedBlobList[countVideoChunk]);
+				URL.revokeObjectURL(source);
+				playbackVideo.play();
+			} else {
+				if (stitching) {
+					mediaRecorder.stop();
+					buttonStitch.style.backgroundColor = "#DDD";
+					stitching = 0;
+				} else {
+					playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+					URL.revokeObjectURL(source);
+					countVideoChunk = 0;
+				}
+			}
+		};
+//		generateVideo();
+//		let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
+//		playbackVideo.src = URL.createObjectURL(recordedBlobList[1]);
+//		buttonDownload.href = playbackVideo.src;
+//		buttonDownload.download = "RecordedVideo.webm";
+//		playbackRatio = mainRatio;
+	}
+}
+function dataEventRec(event) {
+	recordedChunks.push(event.data);
+	if (paused && !discarded) {
+		lastChunkLength = newChunkLength;
+		newChunkLength = recordedChunks.length;
+	}
+}
 function setRecorder() {
 //	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond).getTracks().concat(cameraVideo.srcObject.getAudioTracks()));
 //	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond));
 //	canvasStream.addTrack(cameraVideo.srcObject.getAudioTracks()[0]);
 	var canvasStream = new MediaStream([canvas.captureStream(framePerSecond).getTracks()[0],cameraVideo.srcObject.getAudioTracks()[0]]);
-	var recordedChunks = [];
 	var options = { mimeType: "video/webm" };
+	recordedBlobList = [];
 	mediaRecorder = new MediaRecorder(canvasStream,options);
-	mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
-	mediaRecorder.onstop = event => {
-//		canvasStream.getTracks().forEach(track => track.stop());
-		let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
-	    playbackVideo.src = URL.createObjectURL(recordedBlob);
-    	buttonDownload.href = playbackVideo.src;
-	    buttonDownload.download = "RecordedVideo.webm";
-		playbackRatio = mainRatio;
-	};
-	paused = 0;
+	mediaRecorder.ondataavailable = dataEventRec;
+	mediaRecorder.onstop = stopEventRec;
+	mediaRecorder.onstart = event => {
+		paused = 0;
+		discarded = false;
+		recordedChunks = [];
+		newChunkLength = 0;
+		lastChunkLength = 0;
+	}
 	mediaRecorder.start();
-	var lightIntensity=5;
+	var lightIntensity = 5;
 	var lightChange = 1;
 	lightInterval = window.setInterval(function() {
 		lightIntensity+=lightChange;
@@ -552,6 +696,8 @@ function continueStopSequence() {
 	stopRecorder();
 	buttonRecord.value = "rec";
 	recording = 0;
+	for (let i=0; i++; i<numberStopImages) stopImages[i]=null;
+	numberStopImages = 0;
 	if (!fixedRatioMode) setState();
 }
 
@@ -578,8 +724,16 @@ function stopRecord() {
 	if (playingTitle) playingTitle=0;
 }
 
+var discarded=false;
 function pauseRecord() {
+	discarded = false;
+	mediaRecorder.requestData();
 	mediaRecorder.pause();
+	stopImages[numberStopImages] = new Image();
+	stopImages[numberStopImages].src = canvas.toDataURL("image/png");
+	numberStopImages = numberStopImages+1;
+
+// in the end not used as pause is disabled during intro and outro
 	if (playingIntro) {
 		introVideo.pause();
 	}
@@ -589,14 +743,25 @@ function pauseRecord() {
 }
 
 function restartRecord() {
+// in the end not used as pause is disabled during intro and outro
 	if (playingIntro) {
 		introVideo.play();
 	}
 	if (playingOutro) {
 		outroVideo.play();
 	}
-	mediaRecorder.resume();
+
+	if (!discarded) mediaRecorder.resume();
+	else mediaRecorder.start();
 }
+
+function discardLastSequence() {
+	discarded = true;
+	stopImages[numberStopImages-1]=null;
+	numberStopImages --;
+	mediaRecorder.stop();
+}
+
 
 // done at the start
 function starting() {
@@ -625,22 +790,27 @@ function starting() {
     cameraVideo.clipDown=0;
     cameraVideo.clipLeft=0;
     cameraVideo.clipRight=0;
+    playbackVideo.src = null;
 	context = canvas.getContext('2d');
+	var h,w;
 	recordInterval = window.setInterval(function() {
 		// note: h * h * ratio = pixels
-		var h,w;
-		if (fixedRatioMode) {
-			h = Math.sqrt(pixels / fixedRatio);
-			w = h * fixedRatio;
-		} else {
+		if (!fixedRatioMode) {
 			h = Math.sqrt(pixels / mainRatio);
 			w = h * mainRatio;
+			canvas.width = w;
+			canvas.height = h;
+		} else {
+			var h = Math.sqrt(pixels / fixedRatio);
+			var w = h * fixedRatio;
 		}
-		canvas.width = w;
-		canvas.height = h;
-		if (playingback) {
-			context.fillStyle = "black";
-			context.fill();
+		if (!paused && !comingBack && !stitching) context.clearRect(0, 0, canvas.width, canvas.height);
+		else {
+			context.globalAlpha = 1;
+			if (!stitching && numberStopImages>0) context.drawImage(stopImages[numberStopImages-1],0,0);
+		}
+		if (stitching) {
+			context.drawImage(playbackVideo,0,0,w,h);
 		} else if (playingOutro) {
 /*			let sw=outroVideo.videoWidth;
 			let sh=outroVideo.videoHeight;
@@ -670,7 +840,7 @@ function starting() {
 				context.textAlign = "center"; 
 				let size = theTitleLines.length;
 				theTitleLines.forEach((s,i)=>context.fillText(s,w/2,(h-size*48)/2+48*i));
-			} else {
+			} else if (!paused) {
 				if ((fadingDown || fadingUp) && changeMain) {
 					context.globalAlpha = alpha;
 				}
@@ -693,25 +863,32 @@ function starting() {
 			}
 		}
 		if (fadingUp) {
-			alpha = alpha + 0.1;
+			if (comingBack) alpha = alpha + 0.1;
+			else alpha = alpha + 0.1;
 			if (alpha>=1) {
 				alpha = 1;
 				fadingUp = 0;
+				comingBack=0;
+				context.globalAlpha = 1;
 			}
 		}
 	}, 1000/framePerSecond);
 }
 
 if (document.readyState === 'loading') {  // Loading hasn't finished yet
-  document.addEventListener('DOMContentLoaded', starting);
+	document.addEventListener('DOMContentLoaded', starting);
 } else {  // `DOMContentLoaded` has already fired
-  starting();
+	starting();
 }
 
 introVideo.addEventListener("loadedmetadata", function() {
 	if (!fixedRatioMode) return;
 	fixedRatio = introVideo.videoWidth / introVideo.videoHeight;
 	sizeAll();
+	var h = Math.sqrt(pixels / fixedRatio);
+	var w = h * fixedRatio;
+	canvas.width = w;
+	canvas.height = h;
 });
 
 document.addEventListener('keydown', (event) => {
@@ -723,6 +900,7 @@ document.addEventListener('keydown', (event) => {
 	if (keyName == "4") document.getElementById('buttonConf4').click();
 	if (keyName == " ") document.getElementById('buttonRecord').click();
 	if (keyName == "0") document.getElementById('buttonPause').click();
+	if (keyName == "-") document.getElementById('buttonPlayback').click();
 });
 
 window.addEventListener("resize",sizeAll);
@@ -737,18 +915,28 @@ document.getElementById('buttonConf4').addEventListener('click', () => changeSta
 
 buttonRecord.addEventListener('click', function() {
 	if (!mainVideo.srcObject) return;
-	if (fadingDown || fadingUp || playingback) return;
+	if (fadingDown || fadingUp || playingback || paused || stitching) return;
 	if (recording) {
 		stopRecord();
+		buttonPlayback.value = "playback";
+// not used now : stop disabled during pause
+		if (paused) {
+			paused=0;
+			buttonPause.style.backgroundColor = "#DDD";
+		}
 	} else {
 		startRecord();
 		buttonRecord.value = "stop";
+		buttonPlayback.value = "discard";
 		recording = 1;
 	}
 });
 
 buttonPlayback.addEventListener('click', function() {
-	if (fadingDown || fadingUp || recording) return;
+	if (paused && numberStopImages > 1 && !discarded) {
+		discardLastSequence();
+	}
+	if (fadingDown || fadingUp || recording || !playbackVideo.src || stitching) return;
 	if (playingback) {
 		playbackVideo.style.visibility = "hidden";
 //		canvas.style.visibility = "visible";
@@ -760,23 +948,45 @@ buttonPlayback.addEventListener('click', function() {
 //		canvas.style.visibility = "hidden";
 		buttonPlayback.style.backgroundColor = "#BBF";
 		playingback = 1;
+		playbackVideo.play();
 		sizeAll();
 	}
 });
 
 buttonPause.addEventListener('click', function() {
-	if (recording) {
+	if (recording && !(fadingDown || fadingUp || playingTitle || playingIntro || playingOutro)) {
 		if (!paused) {
 			pauseRecord();
 			paused=1;
 			buttonPause.style.backgroundColor = "#BBF";
+			if (numberStopImages>1) buttonPlayback.value = "discard";
 		}
 		else {
 			restartRecord();
 			paused=0;
+			comingBack=1;
+			changeMain=1;
+			alpha=0;
+			fadingUp=1;
 			buttonPause.style.backgroundColor = "#DDD";
 		}
 	}	
+});
+
+buttonStitch.addEventListener('click', function() {
+	if (fadingDown || fadingUp || recording || playingback || recordedBlobList.length<2) return;
+	if (stitching) {
+		stitching = 0;
+		buttonStitch.style.backgroundColor = "#DDD";
+	}
+	else {
+		stitchVideo();
+		buttonStitch.style.backgroundColor = "#BBF";
+	}
+});
+
+buttonSave.addEventListener('click', function() {
+	if (!stitching) saveVideo();
 });
 
 buttonTitle.addEventListener('click', function() {
