@@ -296,6 +296,7 @@ var mainVideo = document.getElementById("mainVideo");
 var secondaryVideo = document.getElementById("secondaryVideo");
 var playbackVideo = document.getElementById("playbackVideo");
 var canvas = document.getElementById("canvas");
+var imageCanvas = document.createElement("canvas");
 var cameraVideo = document.getElementById("cameraVideo");
 var componentVideo = document.getElementById("componentVideo");
 var controls = document.getElementById("controls");
@@ -717,7 +718,7 @@ function pauseRecord() {
 	mediaRecorder.requestData();
 	mediaRecorder.pause();
 	stopImages[numberStopImages] = new Image();
-	stopImages[numberStopImages].src = canvas.toDataURL("image/png");
+	stopImages[numberStopImages].src = imageCanvas.toDataURL("image/png");
 	numberStopImages = numberStopImages+1;
 
 // in the end not used as pause is disabled during intro and outro
@@ -779,6 +780,7 @@ function starting() {
     cameraVideo.clipRight=0;
     playbackVideo.src = null;
 	context = canvas.getContext('2d');
+	imageContext = imageCanvas.getContext('2d');
 	var h,w;
 	recordInterval = window.setInterval(function() {
 		// note: h * h * ratio = pixels
@@ -787,16 +789,19 @@ function starting() {
 			w = h * mainRatio;
 			canvas.width = w;
 			canvas.height = h;
+			imageCanvas.width = w;
+			imageCanvas.height = h;
 		} else {
 			var h = Math.sqrt(pixels / fixedRatio);
 			var w = h * fixedRatio;
 		}
 		if (!paused && !comingBack && !stitching) context.clearRect(0, 0, canvas.width, canvas.height);
-		else {
+		else if (comingBack && numberStopImages>0){
 			context.globalAlpha = 1;
-			if (!stitching && numberStopImages>0) context.drawImage(stopImages[numberStopImages-1],0,0);
+			context.drawImage(stopImages[numberStopImages-1],0,0);
 		}
 		if (stitching) {
+			context.globalAlpha = 1;
 			context.drawImage(playbackVideo,0,0,w,h);
 		} else if (playingOutro) {
 /*			let sw=outroVideo.videoWidth;
@@ -838,6 +843,8 @@ function starting() {
 				}
 				if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,secondaryVideo.clipLeft,secondaryVideo.clipUp,secondaryVideo.clipWidth,secondaryVideo.clipHeight,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 			}
+			imageContext.drawImage(canvas,0,0);
+			context.globalAlpha = 1;
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
 		}
 		if (fadingDown) {
@@ -876,6 +883,8 @@ introVideo.addEventListener("loadedmetadata", function() {
 	var w = h * fixedRatio;
 	canvas.width = w;
 	canvas.height = h;
+	imageCanvas.width = w;
+	imageCanvas.height = h;
 });
 
 document.addEventListener('keydown', (event) => {
