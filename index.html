@@ -843,6 +843,7 @@ function starting() {
 				}
 				if (secondaryVideo.srcObject) context.drawImage(secondaryVideo,secondaryVideo.clipLeft,secondaryVideo.clipUp,secondaryVideo.clipWidth,secondaryVideo.clipHeight,(1-secondaryWidthFactor)*w-5,(1-secondaryHeightFactor)*h-5,secondaryWidthFactor*w,secondaryHeightFactor*h);
 			}
+			imageContext.clearRect(0, 0, w, h);
 			imageContext.drawImage(canvas,0,0);
 			context.globalAlpha = 1;
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
