@@ -153,7 +153,7 @@
 }
 #buttonPlayback {
 	width: 130px;
-	height: 40px;
+	height: 30px;
 	position: absolute;
 	left: 10px;
 	bottom: 35px;
@@ -511,13 +511,7 @@ var recordedBlobList = [];
 var countVideoChunk;
 
 function stitchVideo() {
-	if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
-	playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
-	countVideoChunk = 0;
-	stitching = 1;
-	playbackVideo.play();
-	var canvasStream = new MediaStream([canvas.captureStream(framePerSecond).getTracks()[0],playbackVideo.srcObject.getAudioTracks()[0]]);
-	alert('oui');
+	var canvasStream = new MediaStream(canvas.captureStream(framePerSecond));
 	var options = { mimeType: "video/webm" };
 	recordedChunks = [];
 	mediaRecorder = new MediaRecorder(canvasStream,options);
@@ -525,11 +519,54 @@ function stitchVideo() {
 	mediaRecorder.onstop = event => {
 		recordedBlobList = [];
 		recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
-		URL.revokeObjectURL(playbackVideo.src);
+		if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
 		playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
 		countVideoChunk = 0;
+		playbackVideo.onplay = null;
 	}
-	mediaRecorder.start();
+	if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
+	playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
+	countVideoChunk = 0;
+	/*
+	var vid = [];
+	for (let i=0; i<recordedBlobList.length; i++) {
+		vid.push(document.createElement('video'));
+	}
+	for (let i=0; i<recordedBlobList.length; i++) {
+		vid[i].src = URL.createObjectURL(recordedBlobList[i]);
+		vid[i].onplay = function() {
+			vid[i].onplay = null;
+			window.setTimeout(()=>{
+				let stream = vid[i].mozCaptureStream ? vid[i].mozCaptureStream() : vid[i].captureStream();
+				let audio = stream.getAudioTracks()[0];
+				vid[i].pause();
+// this does not work - we need to actually merge the audio tracks into one track
+//				canvasStream.addTrack(audio);
+			},10)
+		};
+	}*/
+	// this is to be replaced by the track that is a mix of all audio tracks of all vid's.
+	canvasStream.addTrack(cameraVideo.srcObject.getAudioTracks()[0]);
+	stitching = 1;
+	playbackVideo.onplay = function () {
+//		playbackVideo.onplay = null;
+//		window.setTimeout(()=>{
+		/*
+			let stream = playbackVideo.mozCaptureStream ? playbackVideo.mozCaptureStream() : playbackVideo.captureStream();
+			let audio = stream.getAudioTracks()[0];
+			canvasStream.addTrack(audio);
+			*/
+//			vid[countVideoChunk].play();
+			if (countVideoChunk == 0) mediaRecorder.start();
+//		},20);
+	}
+	/*
+	for (let i=0; i<recordedBlobList.length; i++) {
+		vid[i].play();
+	}
+	*/
+	playbackVideo.muted = false;
+	window.setTimeout(()=>{playbackVideo.play();},200);
 }
 
 function saveVideo() {
@@ -542,66 +579,21 @@ function saveVideo() {
 	}
 	if (playbackVideo.src) URL.revokeObjectURL(playbackVideo.src);
 	playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
-/* // probably not the right way, better to project onto canvas and record that
-	if (recordedBlobList.length == 1) {
-	} else {
-		alert('constructing video');
-		var options = { mimeType: "video/webm" };
-		var count=0;
-		var mr = null;
-		playbackVideo.onplay = function() {
-			if (!mr) {
-				alert('starting play');
-				var stream = playbackVideo.captureStream();
-				alert('...');
-				mr = new MediaRecorder(stream,options);
-				alert('...');
-				mr.ondataavailable = event => recordedChunks.push(event.data);
-				mr.onstop = event => {
-					alert('stopping..');
-					let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
-					playbackVideo.src = URL.createObjectURL(recordedBlob);
-					buttonDownload.href = playbackVideo.src;
-					buttonDownload.download = "RecordedVideo.webm";
-					alert('done');
-				};
-				mr.start();
-				alert('recording started');
-			}
-		}
-		playbackVideo.onended = function() {
-			alert('part: '+count.toString());
-			count++;
-			URL.revokeObjectURL(playbackVideo.src);
-			if (count < recordedBlobList.length) {
-				playbackVideo.src = URL.createObjectURL(recordedBlobList[count]);
-				playbackVideo.play();
-			} else {
-				alert('video constructed');
-				mr.stop();
-			}
-		};
-		recordedChunks = [];
-		alert('...');
-		playbackVideo.play();
-	}
-	*/
+	countVideoChunk = 0;
 }
 
 function stopEventRec(event) {
 	if (discarded) {
 		recordedChunks.length = lastChunkLength;
 		if (recordedChunks.length>0) recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
-//		alert(recordedBlobList.length.toString());
 	} else {
 		recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
-//		alert(recordedBlobList.length.toString());
 		playbackRatio = mainRatio;
 		playbackVideo.src = URL.createObjectURL(recordedBlobList[0]);
 		countVideoChunk=0;
 		playbackVideo.onended = function() {
-			countVideoChunk++;
 			var source = playbackVideo.src;
+			countVideoChunk++;
 			if (countVideoChunk < recordedBlobList.length) {
 				playbackVideo.src = URL.createObjectURL(recordedBlobList[countVideoChunk]);
 				URL.revokeObjectURL(source);
@@ -618,12 +610,6 @@ function stopEventRec(event) {
 				}
 			}
 		};
-//		generateVideo();
-//		let recordedBlob = new Blob(recordedChunks, {type: "video/webm"});
-//		playbackVideo.src = URL.createObjectURL(recordedBlobList[1]);
-//		buttonDownload.href = playbackVideo.src;
-//		buttonDownload.download = "RecordedVideo.webm";
-//		playbackRatio = mainRatio;
 	}
 }
 function dataEventRec(event) {
@@ -639,6 +625,7 @@ function setRecorder() {
 //	canvasStream.addTrack(cameraVideo.srcObject.getAudioTracks()[0]);
 	var canvasStream = new MediaStream([canvas.captureStream(framePerSecond).getTracks()[0],cameraVideo.srcObject.getAudioTracks()[0]]);
 	var options = { mimeType: "video/webm" };
+//	var options = { mimeType: "video/mp4" };
 	recordedBlobList = [];
 	mediaRecorder = new MediaRecorder(canvasStream,options);
 	mediaRecorder.ondataavailable = dataEventRec;
@@ -854,7 +841,7 @@ function starting() {
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
 		}
 		if (fadingDown) {
-			alpha = alpha - 0.1;
+			alpha = alpha - 0.1*25/framePerSecond;
 			if (alpha<=0) {
 				fadingDown = 0;
 				alpha = 0;
@@ -863,8 +850,8 @@ function starting() {
 			}
 		}
 		if (fadingUp) {
-			if (comingBack) alpha = alpha + 0.1;
-			else alpha = alpha + 0.1;
+			if (comingBack) alpha = alpha + 0.1*25/framePerSecond;
+			else alpha = alpha + 0.1*25/framePerSecond;
 			if (alpha>=1) {
 				alpha = 1;
 				fadingUp = 0;
@@ -980,8 +967,8 @@ buttonStitch.addEventListener('click', function() {
 		buttonStitch.style.backgroundColor = "#DDD";
 	}
 	else {
-		stitchVideo();
 		buttonStitch.style.backgroundColor = "#BBF";
+		stitchVideo();
 	}
 });
 
