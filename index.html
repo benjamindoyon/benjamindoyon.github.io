@@ -795,8 +795,8 @@ function starting() {
 			var h = Math.sqrt(pixels / fixedRatio);
 			var w = h * fixedRatio;
 		}
-		if (!paused && !stitching) context.clearRect(0, 0, canvas.width, canvas.height);
-		if (comingBack && numberStopImages>0){
+		if (!stitching) context.clearRect(0, 0, canvas.width, canvas.height);
+		if ((paused || comingBack) && numberStopImages>0){
 			context.globalAlpha = 1;
 			context.drawImage(stopImages[numberStopImages-1],0,0);
 		}
@@ -958,12 +958,12 @@ buttonPause.addEventListener('click', function() {
 			if (numberStopImages>1) buttonPlayback.value = "discard";
 		}
 		else {
-			restartRecord();
-			paused=0;
 			comingBack=1;
+			paused=0;
 			changeMain=1;
 			alpha=0;
 			fadingUp=1;
+			window.setTimeout(restartRecord,100);
 			buttonPause.style.backgroundColor = "#DDD";
 		}
 	}	
