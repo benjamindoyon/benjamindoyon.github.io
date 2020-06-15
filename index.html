@@ -849,7 +849,7 @@ function starting() {
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
 		}
 		if (fadingDown) {
-			alpha = alpha - 0.1*25/framePerSecond;
+			alpha = alpha - 0.1*0.25;
 			if (alpha<=0) {
 				fadingDown = 0;
 				alpha = 0;
@@ -858,8 +858,8 @@ function starting() {
 			}
 		}
 		if (fadingUp) {
-			if (comingBack) alpha = alpha + 0.1*25/framePerSecond;
-			else alpha = alpha + 0.1*25/framePerSecond;
+			if (comingBack) alpha = alpha + 0.1*0.25;
+			else alpha = alpha + 0.1*0.25;
 			if (alpha>=1) {
 				alpha = 1;
 				fadingUp = 0;
@@ -867,7 +867,7 @@ function starting() {
 				context.globalAlpha = 1;
 			}
 		}
-	}, 1000/framePerSecond);
+	}, 10);
 }
 
 if (document.readyState === 'loading') {  // Loading hasn't finished yet
