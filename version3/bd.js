@@ -530,10 +530,14 @@ function comeBack() {
 function restartRecord() {
 	mediaRecorder.start();
 	startLight();
+	var doit=0;
 	bunchingInterval = window.setInterval(function() {
-		mediaRecorder.stop();
-		window.setTimeout(mediaRecorder.start,10);
-	},60000)
+		if (doit) {
+			mediaRecorder.stop();
+			window.setTimeout(mediaRecorder.start,10);
+		}
+		doit = 1;
+	},5000)
 }
 
 /*
