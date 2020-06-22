@@ -18,7 +18,7 @@ if (isset($_GET['title'])) {
         file_put_contents($pfolder."/meta.txt", $_GET['title']);
         chmod($pfolder, 0777);
         chmod($pfolder."/meta.txt", 0777);    
-        header('Location: https://nms.kcl.ac.uk/nikolay.gromov/dhd/bdvideo/myprojects.php');
+        header('Location: https://nms.kcl.ac.uk/nikolay.gromov/dhd/bdvideo/index.php?project='.$pname);
     }    
 }
 
