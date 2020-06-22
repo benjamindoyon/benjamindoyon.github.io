@@ -1,1 +1,1 @@
-Version 3, Nikolay Fromov, Benjamin Doyon
+Version 3, Nikolay Gromov, Benjamin Doyon
