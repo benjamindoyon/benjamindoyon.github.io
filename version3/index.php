@@ -402,8 +402,16 @@ if ( time()-$time>60*60*24 ) {
 
 <div class="panel panel-primary" id="result_panel">
 	<div class="panel-heading"><h2 class="panel-title"><? echo $_SESSION['ptitle']; ?></h2>
-	<a href='myprojects.php'>go back to your list of projects</a>
-    </div>
+	<a href='myprojects.php'><i class="fa fa-arrow-left"></i> go back to your list of projects</a>
+	<h3>How this works?</h3>
+	1) Select one of 4 presents (web-cam only, or web-cam with shared screen/ipad in different compositions)<br>
+	2) Press record button (big red one), record a part and press stop<br>
+	<small class="text-muted">Feel free to record and stop as many times as you like. You can discard any segment of your recording in one click</small><br>
+	3) When you are finished press "Merge & Download" at the bottom of the page<br>
+	<small class="text-muted">It will merge the segments you decided to keep and add King's intro and outro</small><br>
+	4) As an option: <small class="text-muted"> you can add a slate (like a slide with a text on it) before each segment</small>
+	</div>
+	<div class="text-warning">For the current version: please use Chrome, and keep individual segments shorter than 1min</div>
     <div class="panel-body">
 <br>
 
@@ -871,9 +879,6 @@ function getBlobDuration(blob) {
 		tempVideoEl.src = URL.createObjectURL(blob);
 	});
 }
-
-// change made here
-
 
 // output first image of frame
 function getFirstImage(blob) {
