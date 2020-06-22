@@ -495,7 +495,7 @@ function setRecorder() {
 
 
 function pauseRecord() {
-	clearInterval(bunchingInterval);
+	if (bunchingInterval) clearInterval(bunchingInterval);
 	mediaRecorder.stop();
 	stopLight();
 }
@@ -530,15 +530,14 @@ function comeBack() {
 function restartRecord() {
 	mediaRecorder.start();
 	startLight();
-	var doit=0;
+	bunchingInterval = null;
+
+	/*
 	bunchingInterval = window.setInterval(function() {
-//		if (doit) {
 			console.log("stopping");
 			mediaRecorder.stop();
 			window.setTimeout(mediaRecorder.start,100);
-//		}
-		doit = 1;
-	},5000)
+	},5000)*/
 }
 
 /*
