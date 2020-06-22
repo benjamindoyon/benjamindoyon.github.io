@@ -532,10 +532,11 @@ function restartRecord() {
 	startLight();
 	var doit=0;
 	bunchingInterval = window.setInterval(function() {
-		if (doit) {
+//		if (doit) {
+			console.log("stopping");
 			mediaRecorder.stop();
-			window.setTimeout(mediaRecorder.start,10);
-		}
+			window.setTimeout(mediaRecorder.start,100);
+//		}
 		doit = 1;
 	},5000)
 }
