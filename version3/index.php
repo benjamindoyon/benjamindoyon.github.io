@@ -402,16 +402,8 @@ if ( time()-$time>60*60*24 ) {
 
 <div class="panel panel-primary" id="result_panel">
 	<div class="panel-heading"><h2 class="panel-title"><? echo $_SESSION['ptitle']; ?></h2>
-	<a href='myprojects.php'><i class="fa fa-arrow-left"></i> go back to your list of projects</a>
-	<h3>How this works?</h3>
-	1) Select one of 4 presents (web-cam only, or web-cam with shared screen/ipad in different compositions)<br>
-	2) Press record button (big red one), record a part and press stop<br>
-	<small class="text-muted">Feel free to record and stop as many times as you like. You can discard any segment of your recording in one click</small><br>
-	3) When you are finished press "Merge & Download" at the bottom of the page<br>
-	<small class="text-muted">It will merge the segments you decided to keep and add King's intro and outro</small><br>
-	4) As an option: <small class="text-muted"> you can add a slate (like a slide with a text on it) before each segment</small>
-	</div>
-	<div class="text-warning">For the current version: please use Chrome, and keep individual segments shorter than 1min</div>
+	<a href='myprojects.php'>go back to your list of projects</a>
+    </div>
     <div class="panel-body">
 <br>
 
@@ -580,9 +572,15 @@ var outroVideo = document.createElement("video");
 outroVideo.src = "kings/Outro.mp4";
 outroVideo.type = "video/mp4";
 
+// pixels only used in not-fixedRatioMode
 var pixels = 1000000;
 var framePerSecond = 20;
+// for now only fixedRatioMode has been checked
 var fixedRatioMode = true;
+
+// this replaces pixels, and is standard HD 720p
+var targetWidth = 1280;
+var targetHeight = 720;
 
 var theTitleLines = ["Set title"];
 
@@ -604,7 +602,7 @@ var secondaryRatio=1;
 var secondaryWidthFactor=1/4;
 var secondaryHeightFactor=1/4;
 var factor = 1/4;
-var factorList = [1/4,1/4,1/2,1/4,1/4]
+var factorList = [1/4,1/4,1/3,1/4,1/4]
 
 var selectedState = 1;
 var currentState = 0;
@@ -621,6 +619,7 @@ var comingBack = 0;
 var stitching = 0;
 var alpha=1;
 var restart=0;
+var takeFirstImage=0;
 
 // 0: when (re-)starting, title must play, then video comes on from black
 // 1: when (re-)starting, video comes on from black
@@ -761,6 +760,7 @@ function changeState(state) {
 }
 
 var lightInterval;
+var bunchingInterval;
 var recordedChunks = [];
 var newChunkLength = 0;
 var lastChunkLength = 0;
@@ -880,7 +880,11 @@ function getBlobDuration(blob) {
 	});
 }
 
-// output first image of frame
+// change made here
+
+
+/*
+// output first image of frame - not used anymore, first image taken from canvas
 function getFirstImage(blob) {
 	if (!fixedRatioMode) {
 		h = Math.sqrt(pixels / mainRatio);
@@ -888,8 +892,8 @@ function getFirstImage(blob) {
 		imageCanvas.width = w;
 		imageCanvas.height = h;
 	} else {
-		var h = Math.sqrt(pixels / fixedRatio);
-		var w = h * fixedRatio;
+		var h = targetHeight;
+		var w = targetWidth;
 	}
 	return new Promise((res,rej)=> {
 		var tempVideoEl = document.createElement('video');
@@ -902,7 +906,7 @@ function getFirstImage(blob) {
 		});
 		tempVideoEl.src = URL.createObjectURL(blob);
 	});
-}
+}*/
 
 function stopEventRec(event) {
 	recordedBlobList.push(new Blob(recordedChunks, {type: "video/webm"}));
@@ -914,11 +918,13 @@ function stopEventRec(event) {
 		durationList.push(dur);console.log("duration: "+dur.toString());
 		updateTemporaryDuration(dur);
 	});
+	updateTemporaryImage(stopImages[stopImages.length-1].src);
+/*
 	getFirstImage(recordedBlobList[recordedBlobList.length-1]).then(source=>{
 		stopImages.push(new Image());
 		stopImages[stopImages.length-1].src = source;
 		updateTemporaryImage(source);
-	});
+	});*/
 }
 
 /*
@@ -979,6 +985,7 @@ function setRecorder() {
 	mediaRecorder.onstart = event => {
 		paused = 0;
 		recordedChunks = [];
+		takeFirstImage = 1;
 	}
 }
 /*
@@ -1014,6 +1021,7 @@ function setRecorder() {
 
 
 function pauseRecord() {
+	clearInterval(bunchingInterval);
 	mediaRecorder.stop();
 	stopLight();
 }
@@ -1048,6 +1056,10 @@ function comeBack() {
 function restartRecord() {
 	mediaRecorder.start();
 	startLight();
+	bunchingInterval = window.setInterval(function() {
+		mediaRecorder.stop();
+		window.setTimeout(mediaRecorder.start,10);
+	},60000)
 }
 
 /*
@@ -1192,6 +1204,14 @@ function starting() {
 		cameraVideo.srcObject = null;
     	changeState();
     }
+	if (fixedRatioMode) {
+		fixedRatio = targetWidth/targetHeight;
+		sizeAll();
+		canvas.width = targetWidth;
+		canvas.height = targetHeight;
+		imageCanvas.width = targetWidth;
+		imageCanvas.height = targetHeight;
+	}
     componentVideo.clipUp=0;
     componentVideo.clipDown=0;
     componentVideo.clipLeft=0;
@@ -1220,7 +1240,7 @@ function starting() {
 		}
 	};
 	context = canvas.getContext('2d');
-	var h,w;
+	var h,w,imageContext;
 	recordInterval = window.setInterval(function() {
 		// note: h * h * ratio = pixels
 		if (!fixedRatioMode) {
@@ -1229,8 +1249,8 @@ function starting() {
 			canvas.width = w;
 			canvas.height = h;
 		} else {
-			var h = Math.sqrt(pixels / fixedRatio);
-			var w = h * fixedRatio;
+			h = targetHeight;
+			w = targetWidth;
 		}
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1257,6 +1277,14 @@ function starting() {
 			}
 			context.globalAlpha = 1;
 			if (checkboxWatermark.checked) context.drawImage(watermarkImage,w-watermarkImage.width,0);
+			if (takeFirstImage) {
+				takeFirstImage = 0;
+				imageContext = imageCanvas.getContext('2d');
+				imageContext.clearRect(0,0,w,h);
+				imageContext.drawImage(canvas,0,0);
+				stopImages.push(new Image());
+				stopImages[stopImages.length-1].src = imageCanvas.toDataURL("image/png");
+			}
 			if (restart) {
 				restart = 0;
 				mediaRecorder.start();
@@ -1299,6 +1327,7 @@ if (document.readyState === 'loading') {  // Loading hasn't finished yet
 	starting();
 }
 
+/* // ratio is now set to HD without need for the introvideo
 introVideo.addEventListener("loadedmetadata", function() {
 	if (!fixedRatioMode) return;
 	fixedRatio = introVideo.videoWidth / introVideo.videoHeight;
@@ -1310,6 +1339,7 @@ introVideo.addEventListener("loadedmetadata", function() {
 	imageCanvas.width = w;
 	imageCanvas.height = h;
 });
+*/
 
 document.addEventListener('keydown', (event) => {
 	if (document.activeElement === textTitle) return;
