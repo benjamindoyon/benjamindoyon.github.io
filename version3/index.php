@@ -872,6 +872,9 @@ function getBlobDuration(blob) {
 	});
 }
 
+// change made here
+
+
 // output first image of frame
 function getFirstImage(blob) {
 	if (!fixedRatioMode) {
