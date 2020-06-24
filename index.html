@@ -650,6 +650,8 @@ function setRecorder() {
 }
 
 function continueStartSequence() {
+// hack to just play intro / outro
+	recording = 1;
 	buttonRecord.click();
 	if (checkboxTitle.checked) {
 		playingTitle = 1;
