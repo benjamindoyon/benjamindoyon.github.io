@@ -650,6 +650,7 @@ function setRecorder() {
 }
 
 function continueStartSequence() {
+	buttonRecord.click();
 	if (checkboxTitle.checked) {
 		playingTitle = 1;
 		window.setTimeout(()=>{fadingDown = 1;},2000);
@@ -878,14 +879,21 @@ if (document.readyState === 'loading') {  // Loading hasn't finished yet
 
 introVideo.addEventListener("loadedmetadata", function() {
 	if (!fixedRatioMode) return;
+	/* old way
 	fixedRatio = introVideo.videoWidth / introVideo.videoHeight;
 	sizeAll();
 	var h = Math.sqrt(pixels / fixedRatio);
-	var w = h * fixedRatio;
+	var w = h * fixedRatio;*/
+	// new way: fixed dimensions to standard HD
+	var w=1280;
+	var h=720;
+	fixedRatio = w/h;
+	sizeAll();
 	canvas.width = w;
 	canvas.height = h;
 	imageCanvas.width = w;
 	imageCanvas.height = h;
+	
 });
 
 document.addEventListener('keydown', (event) => {
