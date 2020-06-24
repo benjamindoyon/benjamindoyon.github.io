@@ -795,8 +795,11 @@ function starting() {
 			imageCanvas.width = w;
 			imageCanvas.height = h;
 		} else {
+			var w=1280;
+			var h=720;
+/*
 			var h = Math.sqrt(pixels / fixedRatio);
-			var w = h * fixedRatio;
+			var w = h * fixedRatio;*/
 		}
 		if (!stitching) context.clearRect(0, 0, canvas.width, canvas.height);
 		if ((paused || comingBack) && numberStopImages>0){
